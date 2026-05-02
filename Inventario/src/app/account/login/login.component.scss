@@ -1,10 +1,10 @@
-// Diseño glass + acento naranja (HTML usa estas clases; mantener sincronizado)
+// Paleta alineada al diseño de referencia (glass + acento naranja)
 $login-accent: #f58220;
 $login-accent-hover: #ff9635;
 $login-check: #2e5bff;
 $login-text: #ffffff;
-$login-glass: rgba(0, 0, 0, 0.42);
-$login-glass-border: rgba(255, 255, 255, 0.14);
+$login-glass: rgba(0, 0, 0, 0.38);
+$login-glass-border: rgba(255, 255, 255, 0.12);
 
 :host {
   display: block;
@@ -18,7 +18,7 @@ $login-glass-border: rgba(255, 255, 255, 0.14);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem 1.25rem;
+  padding: 2rem 1.25rem;
   overflow-x: hidden;
 }
 
@@ -39,8 +39,8 @@ $login-glass-border: rgba(255, 255, 255, 0.14);
   z-index: 1;
   background: linear-gradient(
     165deg,
-    rgba(12, 22, 38, 0.58) 0%,
-    rgba(25, 18, 40, 0.48) 100%
+    rgba(12, 22, 38, 0.55) 0%,
+    rgba(25, 18, 40, 0.45) 100%
   );
   pointer-events: none;
 }
@@ -54,7 +54,7 @@ $login-glass-border: rgba(255, 255, 255, 0.14);
   border-radius: 16px;
   background: $login-glass;
   border: 1px solid $login-glass-border;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.38);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
@@ -75,22 +75,17 @@ $login-glass-border: rgba(255, 255, 255, 0.14);
   color: $login-accent;
 }
 
-// flex + gap evita que "Iniciar sesión" y "Registro" se peguen en una sola palabra
 .login-tabs {
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
   justify-content: center;
-  align-items: flex-end;
-  column-gap: 2.25rem;
-  row-gap: 0.5rem;
+  gap: 2.5rem;
   margin-bottom: 2rem;
-  padding-bottom: 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  padding-bottom: 0;
 }
 
 .login-tab {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -100,7 +95,6 @@ $login-glass-border: rgba(255, 255, 255, 0.14);
   border-bottom: 3px solid transparent;
   cursor: default;
   user-select: none;
-  white-space: nowrap;
 }
 
 .login-tab--active {
@@ -155,7 +149,6 @@ $login-glass-border: rgba(255, 255, 255, 0.14);
   display: flex;
   flex-direction: column;
   width: 100%;
-  align-items: stretch;
 }
 
 .login-field {
@@ -195,35 +188,26 @@ $login-glass-border: rgba(255, 255, 255, 0.14);
   padding-right: 0.25rem;
 }
 
-// Especificidad + !important por si tema global estiliza inputs tipo .form-control
-.login-card .login-field__input {
+.login-field__input {
   flex: 1;
   min-width: 0;
-  width: 100%;
-  max-width: none;
-  box-sizing: border-box;
-  background: transparent !important;
-  background-color: transparent !important;
-  border: none !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  outline: none !important;
-  color: $login-text !important;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: $login-text;
   font-size: 1rem;
   font-weight: 500;
-  padding: 0.65rem 0 !important;
-  min-height: 0;
-  line-height: 1.4;
+  padding: 0.65rem 0;
 }
 
-.login-card .login-field__input::placeholder {
-  color: rgba(255, 255, 255, 0.35) !important;
+.login-field__input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
 }
 
 .login-field__eye {
   flex-shrink: 0;
-  background: none !important;
-  border: none !important;
+  background: none;
+  border: none;
   color: rgba(255, 255, 255, 0.65);
   padding: 0.35rem;
   cursor: pointer;
@@ -231,7 +215,6 @@ $login-glass-border: rgba(255, 255, 255, 0.14);
   align-items: center;
   justify-content: center;
   transition: color 0.2s;
-  box-shadow: none !important;
 }
 
 .login-field__eye:hover {
@@ -263,7 +246,7 @@ $login-glass-border: rgba(255, 255, 255, 0.14);
   margin: 0;
   border-radius: 3px;
   border: 2px solid rgba(255, 255, 255, 0.5);
-  background: rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.15);
   cursor: pointer;
   flex-shrink: 0;
   position: relative;
@@ -271,8 +254,8 @@ $login-glass-border: rgba(255, 255, 255, 0.14);
 }
 
 .login-remember__input:checked {
-  background: $login-check !important;
-  border-color: $login-check !important;
+  background: $login-check;
+  border-color: $login-check;
 }
 
 .login-remember__input:checked::after {
@@ -297,19 +280,18 @@ $login-glass-border: rgba(255, 255, 255, 0.14);
   color: rgba(255, 255, 255, 0.9);
   cursor: pointer;
   user-select: none;
-  line-height: 1.3;
 }
 
-.login-card .login-submit {
+.login-submit {
   align-self: center;
   width: 100%;
   max-width: 280px;
   margin: 0 auto;
   padding: 0.85rem 1.75rem;
-  border: none !important;
-  border-radius: 999px !important;
-  background: $login-accent !important;
-  color: $login-text !important;
+  border: none;
+  border-radius: 999px;
+  background: $login-accent;
+  color: $login-text;
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -319,16 +301,16 @@ $login-glass-border: rgba(255, 255, 255, 0.14);
   box-shadow: 0 6px 20px rgba(245, 130, 32, 0.35);
 }
 
-.login-card .login-submit:hover:not(:disabled) {
-  background: $login-accent-hover !important;
+.login-submit:hover:not(:disabled) {
+  background: $login-accent-hover;
   box-shadow: 0 8px 26px rgba(245, 130, 32, 0.45);
 }
 
-.login-card .login-submit:active:not(:disabled) {
+.login-submit:active:not(:disabled) {
   transform: scale(0.98);
 }
 
-.login-card .login-submit:disabled {
+.login-submit:disabled {
   opacity: 0.55;
   cursor: not-allowed;
   box-shadow: none;
@@ -357,14 +339,14 @@ $login-glass-border: rgba(255, 255, 255, 0.14);
   }
 
   .login-tabs {
-    column-gap: 1.5rem;
+    gap: 1.5rem;
   }
 
   .login-tab {
     font-size: 0.72rem;
   }
 
-  .login-card .login-submit {
+  .login-submit {
     max-width: 100%;
   }
 }

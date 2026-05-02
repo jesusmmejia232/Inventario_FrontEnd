@@ -1,112 +1,82 @@
+<section class="auth-page-wrapper">
+  <div class="login-bg" aria-hidden="true"></div>
+  <div class="login-overlay" aria-hidden="true"></div>
 
-<header class="login-header">
-  <div class="login-header-content">
-    <div class="login-logo-text">
-      <span class="logo-inve">Inve</span><span class="logo-ntario">ntario</span>
-    </div>
-  </div>
-  <svg class="login-header-curve" width="1262" height="193" viewBox="0 0 1262 193" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-    <path d="M-14 -53.8398H1254.03C1254.03 -53.8398 1363.5 207.702 1244.99 181.748C563.5 32.5 -9.47848 193 -9.47848 193L-14 -53.8398Z" fill="#D6B68A"/>
-    <path d="M-14 -58H1254.03C1254.03 -58 1352.86 156.604 1244.99 140.529C661 53.5 -9.47848 150.011 -9.47848 150.011L-14 -58Z" fill="#141A2F"/>
-  </svg>
-</header>
-
-<section class="auth-page-wrapper d-flex align-items-center justify-content-center min-vh-100">
-  <div class="login-overlay"></div>
-  
   <div class="login-card">
-    <h2 class="login-title">Bienvenido</h2>
-    <p class="text-center text-white mb-4" style="opacity: 0.9;">Inicia sesión para continuar en Inventario.</p>
-    
+    <div class="login-brand">
+      <span class="login-brand__inve">Inve</span><span class="login-brand__ntario">ntario</span>
+    </div>
+
+    <nav class="login-tabs" aria-label="Tipo de acceso">
+      <span class="login-tab login-tab--active" aria-current="page">Iniciar sesión</span>
+      <span class="login-tab login-tab--inactive" title="Próximamente">Registro</span>
+    </nav>
 
     @if (error) {
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-      <i class="ri-error-warning-line me-2"></i> {{ error }}
-      <button type="button" class="btn-close" (click)="error = ''" aria-label="Close"></button>
-    </div>
+      <div class="login-alert" role="alert">
+        <i class="ri-error-warning-line"></i>
+        <span>{{ error }}</span>
+        <button type="button" class="login-alert__close" (click)="error = ''" aria-label="Cerrar">×</button>
+      </div>
     }
-    
 
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
-      
-   
-      <div class="login-input-group">
-        <label for="username" class="login-label">Usuario <span class="text-danger">*</span></label>
-        <div class="login-input-icon">
-          <i class="ri-user-line"></i>
+      <div class="login-field">
+        <label for="username" class="login-field__label">Usuario <span class="login-field__req">*</span></label>
+        <div
+          class="login-field__line"
+          [class.login-field__line--invalid]="submitted && f['username'].errors"
+        >
           <input
             type="text"
-            class="form-control"
-            formControlName="username"
             id="username"
-            [ngClass]="{'is-invalid': submitted && f['username'].errors}"
-            placeholder="Ingrese su usuario"
-            required
+            class="login-field__input"
+            formControlName="username"
+            placeholder=""
+            autocomplete="username"
           />
-          @if (submitted && f['username'].errors) {
-          <div class="invalid-feedback">
-            @if (f['username'].errors['required']) {
-            <div>El usuario es requerido</div>
-            }
-          </div>
-          }
         </div>
+        @if (submitted && f['username'].errors?.['required']) {
+          <p class="login-field__error">El usuario es requerido</p>
+        }
       </div>
 
-
-      <div class="login-input-group">
-        <label class="login-label" for="password-input">
-          Contraseña <span class="text-danger">*</span>
-        </label>
-        <div class="login-input-icon">
-          <i class="ri-lock-2-line"></i>
+      <div class="login-field">
+        <label for="password-input" class="login-field__label">Contraseña <span class="login-field__req">*</span></label>
+        <div
+          class="login-field__line login-field__line--with-action"
+          [class.login-field__line--invalid]="submitted && f['password'].errors"
+        >
           <input
             [type]="fieldTextType ? 'text' : 'password'"
-            formControlName="password"
-            [ngClass]="{'is-invalid': submitted && f['password'].errors}"
-            class="form-control password-input"
-            placeholder="Ingrese su contraseña"
             id="password-input"
-            required
+            class="login-field__input"
+            formControlName="password"
+            placeholder=""
+            autocomplete="current-password"
           />
-          <button
-            type="button"
-            class="login-eye"
-            (click)="toggleFieldTextType()"
-          >
-            <i class="ri-eye-line" *ngIf="!fieldTextType"></i>
-            <i class="ri-eye-off-line" *ngIf="fieldTextType"></i>
-          </button>
-          @if (submitted && f['password'].errors) {
-          <div class="invalid-feedback">
-            @if (f['password'].errors['required']) {
-            <div>La contraseña es requerida</div>
+          <button type="button" class="login-field__eye" (click)="toggleFieldTextType()" aria-label="Mostrar u ocultar contraseña">
+            @if (!fieldTextType) {
+              <i class="ri-eye-line"></i>
+            } @else {
+              <i class="ri-eye-off-line"></i>
             }
-          </div>
-          }
+          </button>
         </div>
+        @if (submitted && f['password'].errors?.['required']) {
+          <p class="login-field__error">La contraseña es requerida</p>
+        }
       </div>
 
-
-      <div class="form-check mb-3">
-        <input
-          class="form-check-input"
-          type="checkbox"
-          value=""
-          id="auth-remember-check"
-        />
-        <label class="form-check-label text-white" for="auth-remember-check" style="opacity: 0.9;">
-          Recuérdame
-        </label>
+      <div class="login-remember">
+        <input class="login-remember__input" type="checkbox" id="auth-remember-check" />
+        <label class="login-remember__label" for="auth-remember-check">Mantener sesión iniciada</label>
       </div>
 
-
-      <button class="btn btn-login" type="submit">
-        <span class="btn-text">Iniciar Sesión</span>
-        <i class="ri-login-box-line"></i>
+      <button class="login-submit" type="submit">
+        Iniciar sesión
       </button>
 
- 
       <div class="login-forgot">
         <a routerLink="/auth/pass-reset">¿Olvidaste tu contraseña?</a>
       </div>
