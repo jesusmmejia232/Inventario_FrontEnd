@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { loginSuccess } from './store/Authentication/authentication.actions';
+import { normalizeUsuarioLogin } from './Models/Acceso/Usuario.model';
 
 @Component({
   selector: 'app-root',
@@ -16,7 +17,7 @@ export class AppComponent implements OnInit {
     const currentUser = localStorage.getItem('currentUser');
     if (currentUser) {
       try {
-        const user = JSON.parse(currentUser);
+        const user = normalizeUsuarioLogin(JSON.parse(currentUser));
         this.store.dispatch(loginSuccess({ user }));
       } catch (error) {
         // Error al parsear: el store no se hidrata pero la sesión permanece válida

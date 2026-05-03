@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 import { AuthenticationService } from '../../core/services/auth.service';
 import { login, loginSuccess, loginFailure, logout, logoutSuccess, Register } from './authentication.actions';
 import { Router } from '@angular/router';
+import { normalizeUsuarioLogin } from 'src/app/Models/Acceso/Usuario.model';
 
 @Injectable()
 export class AuthenticationEffects {
@@ -33,7 +34,10 @@ export class AuthenticationEffects {
             // La validación de code_Status ya se hace en el servicio
             // Si llegamos aquí, el login fue exitoso
             this.router.navigate(['/']);
-            return loginSuccess({ user: response.data });
+            const user = normalizeUsuarioLogin(
+              response.data as Record<string, unknown>
+            );
+            return loginSuccess({ user });
           }),
           catchError((error) => {
             // El error ya fue despachado en el servicio

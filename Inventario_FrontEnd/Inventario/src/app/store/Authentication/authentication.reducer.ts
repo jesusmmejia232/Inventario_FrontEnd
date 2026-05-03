@@ -1,6 +1,7 @@
 import { createReducer, on } from '@ngrx/store';
 import { Register, RegisterFailure, RegisterSuccess, login, loginFailure, loginSuccess, logout } from './authentication.actions';
 import { User } from './auth.models';
+import { normalizeUsuarioLogin } from 'src/app/Models/Acceso/Usuario.model';
 
 export interface AuthenticationState {
     isLoggedIn: boolean;
@@ -21,7 +22,12 @@ export const authenticationReducer = createReducer(
     on(RegisterFailure, (state, { error }) => ({ ...state, error })),
 
     on(login, (state) => ({ ...state, error: null })),
-    on(loginSuccess, (state, { user }) => ({ ...state, isLoggedIn: true, user, error: null, })),
+    on(loginSuccess, (state, { user }) => ({
+        ...state,
+        isLoggedIn: true,
+        user: normalizeUsuarioLogin(user as Record<string, unknown>),
+        error: null,
+    })),
     on(loginFailure, (state, { error }) => ({ ...state, error })),
     on(logout, (state) => ({ ...state, user: null })),
 

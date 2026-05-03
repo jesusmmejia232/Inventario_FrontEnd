@@ -1,14 +1,18 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { PaginationModule } from 'ngx-bootstrap/pagination';
 import { ToastrService } from 'ngx-toastr';
 import { Store } from '@ngrx/store';
 import { RootReducerState } from 'src/app/store';
-import { getUser } from 'src/app/store/Authentication/authentication-selector';
-import { Subscription } from 'rxjs';
+import {
+  getUser,
+  selectPuedeCrearSalida,
+} from 'src/app/store/Authentication/authentication-selector';
+import { esAdminUsuario, esJefeBodegaUsuario } from 'src/app/Models/Acceso/Usuario.model';
+import { Observable, Subscription } from 'rxjs';
 
 import { SharedModule } from 'src/app/shared/shared.module';
 import { ReactiveTableService } from 'src/app/shared/services/reactive-table.service';
@@ -16,7 +20,6 @@ import { FloatingMenuService } from 'src/app/shared/services/floating-menu.servi
 import { Salidas } from 'src/app/Models/Inventario/Salidas.Model';
 import { GlobalComponent } from 'src/app/global-component';
 import { environment } from 'src/environments/environment';
-import { DetailsComponent } from '../details/details.component';
 import { ConfirmationComponent } from '../confirmation/confirmation.component';
 
 @Component({
@@ -28,7 +31,6 @@ import { ConfirmationComponent } from '../confirmation/confirmation.component';
     RouterModule,
     SharedModule,
     PaginationModule,
-    DetailsComponent,
     ConfirmationComponent
   ],
   templateUrl: './list.component.html',
@@ -38,6 +40,7 @@ export class ListComponent implements OnInit, OnDestroy {
   breadCrumbItems!: Array<{}>;
 
   userData: any;
+  puedeCrearSalida$: Observable<boolean>;
   private userSubscription?: Subscription;
 
   sucursales: any[] = [];
@@ -46,21 +49,20 @@ export class ListComponent implements OnInit, OnDestroy {
   filtroFechaFin: string = '';
 
   mostrarOverlayCarga = false;
-  mostrarFormularioDetalles = false;
-  
+
   // Modal de confirmación
   mostrarConfirmacion = false;
   salidaARecibir: Salidas | null = null;
-
-  salidaSeleccionada: Salidas | null = null;
 
   constructor(
     public table: ReactiveTableService<Salidas>,
     public floatingMenuService: FloatingMenuService,
     private http: HttpClient,
     private toastService: ToastrService,
-    private store: Store<RootReducerState>
+    private store: Store<RootReducerState>,
+    private router: Router
   ) {
+    this.puedeCrearSalida$ = this.store.select(selectPuedeCrearSalida);
     this.table.setConfig([
       'secuencia',
       'sali_FechaSalida',
@@ -116,18 +118,34 @@ export class ListComponent implements OnInit, OnDestroy {
     this.cargardatos();
   }
 
-  detalles(salida: Salidas): void {
-    this.salidaSeleccionada = { ...salida };
-    this.mostrarFormularioDetalles = true;
+  esEstadoEnviada(estado: string | undefined | null): boolean {
+    return (estado || '').toLowerCase().includes('enviad');
   }
 
-  cerrarFormulario(): void {
-    this.mostrarFormularioDetalles = false;
-    this.salidaSeleccionada = null;
+  esEstadoRecibida(estado: string | undefined | null): boolean {
+    return (estado || '').toLowerCase().includes('recib');
+  }
+
+  verDetallesSalida(event: MouseEvent, salida: Salidas): void {
+    event.stopPropagation();
+    event.preventDefault();
+    if (!salida?.sali_Id) {
+      this.toastService.error('No se encontró el identificador de la salida');
+      return;
+    }
+    this.floatingMenuService.close();
+    void this.router.navigate(['/inventario/salidas/details', salida.sali_Id]);
+  }
+
+  recibirSalidaDesdeMenu(event: MouseEvent, salida: Salidas): void {
+    event.stopPropagation();
+    event.preventDefault();
+    this.floatingMenuService.close();
+    this.recibirSalida(salida);
   }
 
   recibirSalida(salida: Salidas): void {
-    if (salida.sali_EstadoSalida !== 'Enviada a Sucursal') {
+    if (!this.esEstadoEnviada(salida.sali_EstadoSalida)) {
       this.toastService.warning(
         'Esta salida ya fue recibida o no está en estado válido'
       );
@@ -171,7 +189,6 @@ export class ListComponent implements OnInit, OnDestroy {
               response.message || 'Salida recibida exitosamente'
             );
             this.cargardatos();
-            this.cerrarFormulario();
           } else {
             this.toastService.error(
               response.message || 'Error al recibir la salida'
@@ -201,7 +218,11 @@ export class ListComponent implements OnInit, OnDestroy {
             let data = response.data;
 
             // Filtro de seguridad: Si no es Admin ni Jefe de Bodega, solo ve su sucursal
-            if (this.userData && !this.userData.usua_EsAdmin && !this.userData.empl_EsJefeBodega) {
+            if (
+              this.userData &&
+              !esAdminUsuario(this.userData) &&
+              !esJefeBodegaUsuario(this.userData)
+            ) {
               if (this.userData.sucs_Id) {
                 data = data.filter((item: any) => item.sucs_Id === this.userData.sucs_Id);
               }

@@ -14,7 +14,7 @@
     <div class="card salidas-main-card">
       <div class="card-body">
         <!-- Filtros -->
-        <div class="salidas-filters row g-3 mb-3" *ngIf="!mostrarFormularioDetalles">
+        <div class="salidas-filters row g-3 mb-3">
           <div class="col-md-3">
             <label class="form-label fw-bold">Sucursal</label>
             <select class="form-select" [(ngModel)]="filtroSucursal">
@@ -45,14 +45,14 @@
           </div>
         </div>
 
-        <hr class="my-3" *ngIf="!mostrarFormularioDetalles">
+        <hr class="my-3">
 
         <!-- Header: Búsqueda y Botón Nuevo -->
-        <div class="salidas-toolbar d-flex justify-content-between align-items-center mb-3" *ngIf="!mostrarFormularioDetalles">
+        <div class="salidas-toolbar d-flex justify-content-between align-items-center mb-3">
           <a
             routerLink="/inventario/salidas/create"
             class="btn btn-primary"
-            *ngIf="userData?.empl_EsJefeBodega || userData?.usua_EsAdmin">
+            *ngIf="(puedeCrearSalida$ | async)">
             <i class="ri-add-line align-bottom me-1"></i> Nueva Salida
           </a>
 
@@ -63,15 +63,8 @@
           </div>
         </div>
 
-        <!-- Formulario de Detalles (Colapsable) -->
-        <div class="row mb-3" *ngIf="mostrarFormularioDetalles">
-          <div class="col-lg-12">
-             <app-details [salidaData]="salidaSeleccionada" (onCancel)="cerrarFormulario()" (onRecibir)="cargardatos()"></app-details>
-          </div>
-        </div>
-
         <!-- Tabla y Paginación -->
-        <div [hidden]="mostrarFormularioDetalles">
+        <div>
           <div class="table-responsive">
             <table class="table align-middle table-nowrap table-hover table-striped mb-0">
               <thead class="table-light">
@@ -107,7 +100,6 @@
                 <tr *ngFor="let data of table.paginated$ | async">
                   <td class="position-relative">
                     <div class="dropdown-action-list">
-                      
                       <button type="button"
                         class="dropdown-toggle btn btn-sm btn-light"
                         [attr.aria-expanded]="false"
@@ -125,8 +117,8 @@
                   <td>
                     <span class="badge" 
                       [ngClass]="{
-                        'bg-warning-subtle text-warning': data.sali_EstadoSalida === 'Enviada a Sucursal',
-                        'bg-success-subtle text-success': data.sali_EstadoSalida === 'Recibida en Sucursal'
+                        'bg-warning-subtle text-warning': esEstadoEnviada(data.sali_EstadoSalida),
+                        'bg-success-subtle text-success': esEstadoRecibida(data.sali_EstadoSalida)
                       }">
                       {{data.sali_EstadoSalida}}
                     </span>
@@ -174,24 +166,25 @@
 </div>
 </div>
 
-<!-- Menú Flotante -->
+<!-- Menú flotante -->
 <ul
   *ngIf="floatingMenuService.show"
   class="dropdown-menu show salidas-floating-menu"  
   [ngStyle]="{
-    position: 'absolute',
+    position: 'fixed',
     top: floatingMenuService.top + 'px',
-    left: floatingMenuService.left + 'px'
+    left: floatingMenuService.left + 'px',
+    minWidth: '10rem'
   }"
   style="z-index: 10000;">
   <li>
-    <button type="button" class="dropdown-item" (click)="detalles(floatingMenuService.data); floatingMenuService.close()">
-      <i class="ri-eye-line me-2 align-bottom text-muted"></i> Ver Detalles
+    <button type="button" class="dropdown-item" (click)="verDetallesSalida($event, floatingMenuService.data)">
+      <i class="ri-eye-line me-2 align-bottom text-muted"></i> Ver detalles
     </button>
   </li>
-  <li *ngIf="floatingMenuService.data?.sali_EstadoSalida === 'Enviada a Sucursal'">
-    <button type="button" class="dropdown-item text-success" (click)="recibirSalida(floatingMenuService.data); floatingMenuService.close()">
-      <i class="ri-checkbox-circle-line me-2 align-bottom"></i> Recibir Salida
+  <li *ngIf="esEstadoEnviada(floatingMenuService.data?.sali_EstadoSalida)">
+    <button type="button" class="dropdown-item text-success" (click)="recibirSalidaDesdeMenu($event, floatingMenuService.data)">
+      <i class="ri-checkbox-circle-line me-2 align-bottom"></i> Recibir salida
     </button>
   </li>
 </ul>

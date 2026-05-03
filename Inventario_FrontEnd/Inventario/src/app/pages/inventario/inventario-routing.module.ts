@@ -3,6 +3,8 @@ import { RouterModule, Routes } from '@angular/router';
 import { ListComponent as EntradasListComponent } from './entradas/list/list.component';
 import { ListComponent as SalidasListComponent } from './salidas/list/list.component';
 import { SalidaCreatePageComponent } from './salidas/create/salida-create-page.component';
+import { SalidaDetailsPageComponent } from './salidas/details/salida-details-page.component';
+import { salidasCreateGuard } from 'src/app/core/guards/salidas-create.guard';
 
 const routes: Routes = [
   {
@@ -15,7 +17,12 @@ const routes: Routes = [
   },
   {
     path: 'salidas/create',
-    component: SalidaCreatePageComponent
+    component: SalidaCreatePageComponent,
+    canActivate: [salidasCreateGuard],
+  },
+  {
+    path: 'salidas/details/:saliId',
+    component: SalidaDetailsPageComponent
   }
 ];
 
