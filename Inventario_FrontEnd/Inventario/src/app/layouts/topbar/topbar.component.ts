@@ -75,6 +75,20 @@ export class TopbarComponent implements OnInit {
     public store: Store<RootReducerState>
   ) {}
 
+  /** Iniciales para el avatar sin foto (sustituye la imagen por defecto del tema). */
+  get userInitials(): string {
+    const u = this.userData;
+    if (!u) return 'U';
+    const n = (u.empl_Nombres ?? '').trim();
+    const a = (u.empl_Apellidos ?? '').trim();
+    if (!n && !a) return 'U';
+    if (n && a) return (n[0] + a[0]).toUpperCase();
+    const single = n || a;
+    return single.length >= 2
+      ? (single[0] + single[1]).toUpperCase()
+      : single[0].toUpperCase();
+  }
+
   ngOnInit(): void {
     this.element = document.documentElement;
 

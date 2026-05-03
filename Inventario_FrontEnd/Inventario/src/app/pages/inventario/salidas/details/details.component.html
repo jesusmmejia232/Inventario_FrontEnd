@@ -1,11 +1,12 @@
+<div class="salidas-details-root">
 <!-- Overlay de carga -->
-<div *ngIf="cargando" class="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-white bg-opacity-75" style="z-index: 1050;">
-  <div class="spinner-border text-primary" role="status">
+<div *ngIf="cargando" class="salidas-overlay position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-white bg-opacity-75" style="z-index: 1050;">
+  <div class="spinner-border salidas-spinner" role="status">
     <span class="visually-hidden">Cargando detalles...</span>
   </div>
 </div>
 
-<div class="card" *ngIf="salidaDetalle && !cargando">
+<div class="card salidas-panel-card" *ngIf="salidaDetalle && !cargando">
   <div class="card-body">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -136,3 +137,4 @@
   (onConfirm)="confirmarRecepcion()"
   (onCancel)="mostrarConfirmacion = false">
 </app-confirmation>
+</div>

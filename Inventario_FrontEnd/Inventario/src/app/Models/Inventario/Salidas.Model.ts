@@ -11,6 +11,7 @@ export class Salidas {
     sali_FechaRecepcion?: Date;
     sali_GuiaRemision?: string;
     sali_Estado: boolean = true;
+    Usua_NombreUsuario: string = "";
     
     // Auditoría
     sali_Creacion: number = 0;

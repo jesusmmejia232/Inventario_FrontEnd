@@ -1,19 +1,20 @@
 <!-- Overlay de carga -->
-<div *ngIf="mostrarOverlayCarga" class="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-white bg-opacity-75" style="z-index: 1050;">
-  <div class="spinner-border text-primary" role="status">
+<div *ngIf="mostrarOverlayCarga" class="salidas-overlay position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-white bg-opacity-75" style="z-index: 1050;">
+  <div class="spinner-border salidas-spinner" role="status">
     <span class="visually-hidden">Cargando...</span>
   </div>
 </div>
 
+<div class="salidas-page">
 <!-- Breadcrumbs -->
 <app-breadcrumbs title="Salidas" [breadcrumbItems]="breadCrumbItems"></app-breadcrumbs>
 
 <div class="row">
   <div class="col-lg-12">
-    <div class="card">
+    <div class="card salidas-main-card">
       <div class="card-body">
         <!-- Filtros -->
-        <div class="row g-3 mb-3" *ngIf="!mostrarFormularioCrear && !mostrarFormularioDetalles">
+        <div class="salidas-filters row g-3 mb-3" *ngIf="!mostrarFormularioCrear && !mostrarFormularioDetalles">
           <div class="col-md-3">
             <label class="form-label fw-bold">Sucursal</label>
             <select class="form-select" [(ngModel)]="filtroSucursal">
@@ -47,7 +48,7 @@
         <hr class="my-3" *ngIf="!mostrarFormularioCrear && !mostrarFormularioDetalles">
 
         <!-- Header: Búsqueda y Botón Nuevo -->
-        <div class="d-flex justify-content-between mb-3" *ngIf="!mostrarFormularioCrear && !mostrarFormularioDetalles">
+        <div class="salidas-toolbar d-flex justify-content-between align-items-center mb-3" *ngIf="!mostrarFormularioCrear && !mostrarFormularioDetalles">
           <button type="button" class="btn btn-primary" (click)="crear()" *ngIf="userData?.empl_EsJefeBodega">
             <i class="ri-add-line align-bottom me-1"></i> Nueva Salida
           </button>
@@ -175,11 +176,12 @@
     </div>
   </div>
 </div>
+</div>
 
 <!-- Menú Flotante -->
 <ul
   *ngIf="floatingMenuService.show"
-  class="dropdown-menu show"  
+  class="dropdown-menu show salidas-floating-menu"  
   [ngStyle]="{
     position: 'absolute',
     top: floatingMenuService.top + 'px',
