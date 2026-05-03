@@ -418,8 +418,11 @@ export class CreateComponent implements OnInit, OnDestroy {
 
   /**
    * Un registro de detalle por cada lote consumido (FIFO), con costo, vencimiento y cantidad del lote.
+   * Coincide con el DTO de /Salidas/Insertar (code_Status / message_Status en cada línea).
    */
   private construirDetallesParaApi(): Array<{
+    code_Status: number;
+    message_Status: string;
     lote_Id: number;
     sade_CostoUnitario: number;
     sade_FechaVencimiento: string;
@@ -427,6 +430,8 @@ export class CreateComponent implements OnInit, OnDestroy {
     sade_Cantidad: number;
   }> {
     const filas: Array<{
+      code_Status: number;
+      message_Status: string;
       lote_Id: number;
       sade_CostoUnitario: number;
       sade_FechaVencimiento: string;
@@ -437,6 +442,8 @@ export class CreateComponent implements OnInit, OnDestroy {
     for (const d of this.detalles) {
       for (const l of d.lotesUsados) {
         filas.push({
+          code_Status: 0,
+          message_Status: '',
           lote_Id: l.lote_Id,
           sade_CostoUnitario: l.costoUnitario,
           sade_FechaVencimiento: this.formatDateOnlyForApi(l.fechaVencimiento),
@@ -537,8 +544,10 @@ export class CreateComponent implements OnInit, OnDestroy {
     const usuarioId = this.userData.usua_Id as number;
     const fechaCreacion = this.obtenerFechaCreacionIso() as string;
 
-    const transportistaTrim = this.transportistaTexto.trim();
+    /** Cuerpo según contrato /Salidas/Insertar */
     const request: {
+      code_Status: number;
+      message_Status: string;
       sucs_Id: number;
       sali_UsuarioEnvia: number;
       vehi_Id: number;
@@ -547,8 +556,9 @@ export class CreateComponent implements OnInit, OnDestroy {
       sali_FechaCreacion: string;
       lote_Id: number;
       detalles: ReturnType<CreateComponent['construirDetallesParaApi']>;
-      transportista?: string;
     } = {
+      code_Status: 0,
+      message_Status: '',
       sucs_Id: this.sucs_Id as number,
       sali_UsuarioEnvia: usuarioId,
       vehi_Id: this.vehi_Id ?? 0,
@@ -558,9 +568,6 @@ export class CreateComponent implements OnInit, OnDestroy {
       lote_Id: 0,
       detalles: this.construirDetallesParaApi(),
     };
-    if (transportistaTrim) {
-      request.transportista = transportistaTrim;
-    }
 
     this.guardando = true;
     this.http.post<any>(`${environment.apiUrl}/Salidas/Insertar`, request, {
