@@ -1,0 +1,9 @@
+<div class="salidas-page">
+  <app-breadcrumbs title="Nueva salida" [breadcrumbItems]="breadCrumbItems"></app-breadcrumbs>
+
+  <div class="row">
+    <div class="col-lg-12">
+      <app-create (onCancel)="volver()" (onSave)="alGuardar($event)"></app-create>
+    </div>
+  </div>
+</div>

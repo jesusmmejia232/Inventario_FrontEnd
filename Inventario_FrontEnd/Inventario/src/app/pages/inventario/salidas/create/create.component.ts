@@ -74,6 +74,10 @@ export class CreateComponent implements OnInit, OnDestroy {
   // Estado
   cargando = false;
   guardando = false;
+  /** Valor para input datetime-local (fecha/hora de creación de la salida) */
+  saliFechaCreacionInput = '';
+  submitted = false;
+  errores: { sucs?: string; fecha?: string; detalles?: string } = {};
 
   constructor(
     private http: HttpClient,
@@ -86,7 +90,8 @@ export class CreateComponent implements OnInit, OnDestroy {
     this.userSubscription = this.store.select(getUser).subscribe((user) => {
       this.userData = user;
     });
-    
+
+    this.saliFechaCreacionInput = this.toDateTimeLocalValue(new Date());
     this.cargarCatalogos();
   }
 
@@ -199,6 +204,7 @@ export class CreateComponent implements OnInit, OnDestroy {
     // Resetear selección
     this.articuloSeleccionado = null;
     this.cantidadSeleccionada = 1;
+    this.errores.detalles = undefined;
   }
 
   /**
@@ -280,21 +286,105 @@ export class CreateComponent implements OnInit, OnDestroy {
     return this.detalles.reduce((sum, item) => sum + item.cantidad, 0);
   }
 
-  guardar(): void {
-    // Validaciones
+  private toDateTimeLocalValue(d: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  /** yyyy-MM-dd para la API en cada detalle */
+  private formatDateOnlyForApi(fecha: string): string {
+    if (!fecha) return '';
+    const d = new Date(fecha);
+    if (Number.isNaN(d.getTime())) {
+      return fecha.slice(0, 10);
+    }
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  private obtenerFechaCreacionIso(): string | null {
+    if (!this.saliFechaCreacionInput?.trim()) {
+      return null;
+    }
+    const parsed = new Date(this.saliFechaCreacionInput);
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+    return parsed.toISOString();
+  }
+
+  /**
+   * Un registro de detalle por cada lote consumido (FIFO), con costo, vencimiento y cantidad del lote.
+   */
+  private construirDetallesParaApi(): Array<{
+    lote_Id: number;
+    sade_CostoUnitario: number;
+    sade_FechaVencimiento: string;
+    arti_Id: number;
+    sade_Cantidad: number;
+  }> {
+    const filas: Array<{
+      lote_Id: number;
+      sade_CostoUnitario: number;
+      sade_FechaVencimiento: string;
+      arti_Id: number;
+      sade_Cantidad: number;
+    }> = [];
+
+    for (const d of this.detalles) {
+      for (const l of d.lotesUsados) {
+        filas.push({
+          lote_Id: l.lote_Id,
+          sade_CostoUnitario: l.costoUnitario,
+          sade_FechaVencimiento: this.formatDateOnlyForApi(l.fechaVencimiento),
+          arti_Id: d.arti_Id,
+          sade_Cantidad: l.cantidad,
+        });
+      }
+    }
+    return filas;
+  }
+
+  private validarFormulario(): boolean {
+    this.errores = {};
+    this.submitted = true;
+
     if (!this.sucs_Id) {
-      this.toastService.warning('Seleccione una sucursal de destino');
-      return;
+      this.errores.sucs = 'Seleccione una sucursal de destino';
+    }
+
+    const fechaIso = this.obtenerFechaCreacionIso();
+    if (!fechaIso) {
+      this.errores.fecha = 'Indique una fecha y hora de creación válidas';
     }
 
     if (this.detalles.length === 0) {
-      this.toastService.warning('Agregue al menos un artículo a la salida');
-      return;
+      this.errores.detalles = 'Agregue al menos un artículo a la salida';
+    } else {
+      const detApi = this.construirDetallesParaApi();
+      if (detApi.length === 0) {
+        this.errores.detalles = 'Los detalles no tienen información de lotes válida';
+      }
     }
 
-    // Validar que el usuario esté logueado
-    if (!this.userData || !this.userData.usua_Id) {
+    if (!this.userData?.usua_Id) {
       this.toastService.error('No se pudo obtener la información del usuario');
+      return false;
+    }
+
+    const ok = !this.errores.sucs && !this.errores.fecha && !this.errores.detalles;
+    if (!ok) {
+      const primero =
+        this.errores.sucs || this.errores.fecha || this.errores.detalles;
+      if (primero) {
+        this.toastService.warning('Revise los campos marcados antes de continuar');
+      }
+    }
+    return ok;
+  }
+
+  guardar(): void {
+    if (!this.validarFormulario()) {
       return;
     }
 
@@ -341,19 +431,18 @@ export class CreateComponent implements OnInit, OnDestroy {
   }
 
   private enviarSalida(): void {
-    const usuarioId = this.userData.usua_Id;
+    const usuarioId = this.userData.usua_Id as number;
+    const fechaCreacion = this.obtenerFechaCreacionIso() as string;
 
     const request = {
-      sucs_Id: this.sucs_Id,
+      sucs_Id: this.sucs_Id as number,
       sali_UsuarioEnvia: usuarioId,
-      vehi_Id: this.vehi_Id || null,
-      sali_Transportista: this.sali_Transportista || null,
+      vehi_Id: this.vehi_Id ?? 0,
+      sali_Transportista: this.sali_Transportista ?? 0,
       sali_Creacion: usuarioId,
-      sali_FechaCreacion: new Date().toISOString(),
-      detalles: this.detalles.map(d => ({
-        arti_Id: d.arti_Id,
-        sade_Cantidad: d.cantidad
-      }))
+      sali_FechaCreacion: fechaCreacion,
+      lote_Id: 0,
+      detalles: this.construirDetallesParaApi(),
     };
 
     this.guardando = true;
@@ -397,6 +486,9 @@ export class CreateComponent implements OnInit, OnDestroy {
     this.detalles = [];
     this.articuloSeleccionado = null;
     this.cantidadSeleccionada = 1;
+    this.saliFechaCreacionInput = this.toDateTimeLocalValue(new Date());
+    this.submitted = false;
+    this.errores = {};
   }
 
   cancelar(): void {

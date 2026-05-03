@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { InventarioRoutingModule } from './inventario-routing.module';
 import { ListComponent as EntradasListComponent } from './entradas/list/list.component';
 import { ListComponent as SalidasListComponent } from './salidas/list/list.component';
+import { SalidaCreatePageComponent } from './salidas/create/salida-create-page.component';
 
 @NgModule({
   declarations: [],
@@ -10,7 +11,8 @@ import { ListComponent as SalidasListComponent } from './salidas/list/list.compo
     CommonModule,
     InventarioRoutingModule,
     EntradasListComponent,
-    SalidasListComponent
+    SalidasListComponent,
+    SalidaCreatePageComponent
   ]
 })
 export class InventarioModule { }

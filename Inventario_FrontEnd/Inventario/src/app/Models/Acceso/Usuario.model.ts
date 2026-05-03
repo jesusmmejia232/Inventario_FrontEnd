@@ -1,6 +1,7 @@
 export interface UsuarioLogin {
   usua_Id?: number;
   usua_NombreUsuario?: string;
+  usuarioRecibe?: string;
   usua_Clave?: string | null;
   usua_EsAdmin?: boolean;
   empl_Id?: number;

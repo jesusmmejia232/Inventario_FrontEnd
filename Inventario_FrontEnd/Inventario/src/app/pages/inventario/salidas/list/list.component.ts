@@ -16,7 +16,6 @@ import { FloatingMenuService } from 'src/app/shared/services/floating-menu.servi
 import { Salidas } from 'src/app/Models/Inventario/Salidas.Model';
 import { GlobalComponent } from 'src/app/global-component';
 import { environment } from 'src/environments/environment';
-import { CreateComponent } from '../create/create.component';
 import { DetailsComponent } from '../details/details.component';
 import { ConfirmationComponent } from '../confirmation/confirmation.component';
 
@@ -29,7 +28,6 @@ import { ConfirmationComponent } from '../confirmation/confirmation.component';
     RouterModule,
     SharedModule,
     PaginationModule,
-    CreateComponent,
     DetailsComponent,
     ConfirmationComponent
   ],
@@ -48,7 +46,6 @@ export class ListComponent implements OnInit, OnDestroy {
   filtroFechaFin: string = '';
 
   mostrarOverlayCarga = false;
-  mostrarFormularioCrear = false;
   mostrarFormularioDetalles = false;
   
   // Modal de confirmación
@@ -119,26 +116,14 @@ export class ListComponent implements OnInit, OnDestroy {
     this.cargardatos();
   }
 
-  crear(): void {
-    this.mostrarFormularioCrear = true;
-    this.mostrarFormularioDetalles = false;
-  }
-
   detalles(salida: Salidas): void {
     this.salidaSeleccionada = { ...salida };
     this.mostrarFormularioDetalles = true;
-    this.mostrarFormularioCrear = false;
   }
 
   cerrarFormulario(): void {
-    this.mostrarFormularioCrear = false;
     this.mostrarFormularioDetalles = false;
     this.salidaSeleccionada = null;
-  }
-
-  guardarSalida(salida: Salidas): void {
-    this.cargardatos();
-    this.cerrarFormulario();
   }
 
   recibirSalida(salida: Salidas): void {

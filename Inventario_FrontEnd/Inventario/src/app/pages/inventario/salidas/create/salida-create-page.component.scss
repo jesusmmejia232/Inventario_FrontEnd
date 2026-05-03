@@ -1,0 +1,13 @@
+@use '../salidas-theme' as *;
+
+:host {
+  display: block;
+}
+
+.salidas-page {
+  padding-bottom: 1.5rem;
+
+  .text-primary {
+    color: $sd-accent !important;
+  }
+}

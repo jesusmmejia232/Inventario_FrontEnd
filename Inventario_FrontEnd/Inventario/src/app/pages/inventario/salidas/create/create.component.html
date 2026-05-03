@@ -12,18 +12,36 @@
 
     <div *ngIf="!cargando">
       <!-- Sección de Encabezado -->
-      <div class="row g-3 mb-4">
-        <div class="col-md-4">
-          <label class="form-label fw-bold">Sucursal Destino <span class="text-danger">*</span></label>
-          <select class="form-select" [(ngModel)]="sucs_Id" [disabled]="guardando">
+      <div class="salidas-create-filters row g-3 mb-4">
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Sucursal <span class="text-danger">*</span></label>
+          <select
+            class="form-select"
+            [(ngModel)]="sucs_Id"
+            (ngModelChange)="errores.sucs = undefined"
+            [class.is-invalid]="submitted && errores.sucs"
+            [disabled]="guardando">
             <option [ngValue]="null">Seleccione una sucursal...</option>
             <option *ngFor="let suc of sucursales" [ngValue]="suc.sucs_Id">
               {{suc.sucs_Descripcion}}
             </option>
           </select>
+          <div class="invalid-feedback" *ngIf="submitted && errores.sucs">{{ errores.sucs }}</div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Fecha creación <span class="text-danger">*</span></label>
+          <input
+            type="datetime-local"
+            class="form-control"
+            [(ngModel)]="saliFechaCreacionInput"
+            (ngModelChange)="errores.fecha = undefined"
+            [class.is-invalid]="submitted && errores.fecha"
+            [disabled]="guardando" />
+          <div class="invalid-feedback" *ngIf="submitted && errores.fecha">{{ errores.fecha }}</div>
+        </div>
+
+        <div class="col-md-3">
           <label class="form-label fw-bold">Vehículo</label>
           <select class="form-select" [(ngModel)]="vehi_Id" [disabled]="guardando">
             <option [ngValue]="null">Sin vehículo asignado</option>
@@ -33,7 +51,7 @@
           </select>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-3">
           <label class="form-label fw-bold">Transportista</label>
           <select class="form-select" [(ngModel)]="sali_Transportista" [disabled]="guardando">
             <option [ngValue]="null">Sin transportista asignado</option>
@@ -74,8 +92,10 @@
         </div>
       </div>
 
+      <div class="text-danger small mb-2" *ngIf="submitted && errores.detalles">{{ errores.detalles }}</div>
+
       <!-- Grid de Productos Agregados -->
-      <div class="table-responsive mb-4">
+      <div class="table-responsive mb-4" [class.border]="submitted && errores.detalles" [class.border-danger]="submitted && errores.detalles" [class.rounded]="submitted && errores.detalles">
         <table class="table table-bordered table-striped align-middle mb-0">
           <thead class="table-light">
             <tr>
@@ -150,7 +170,7 @@
         <button type="button" class="btn btn-light" (click)="cancelar()" [disabled]="guardando">
           <i class="ri-close-line align-bottom me-1"></i> Cancelar
         </button>
-        <button type="button" class="btn btn-success" (click)="guardar()" [disabled]="guardando">
+        <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">
           <span *ngIf="guardando" class="spinner-border spinner-border-sm me-1"></span>
           <i *ngIf="!guardando" class="ri-save-line align-bottom me-1"></i>
           {{guardando ? 'Guardando...' : 'Guardar Salida'}}

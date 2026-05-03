@@ -30,6 +30,7 @@ function buildIniciarSesionBody(
     message_Status: '',
     usua_Id: 0,
     usua_NombreUsuario,
+    usuarioRecibe: '',
     usua_Clave,
     usua_EsAdmin: false,
     empl_Id: 0,
