@@ -13,6 +13,7 @@ export class Articulos {
   code_Status: number = 0;
   secuencia: number = 0;
   message_Status: string = '';
+  stock ?: number;
 
   constructor(init?: Partial<Articulos>) {
     Object.assign(this, init);

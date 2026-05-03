@@ -8,15 +8,16 @@ import { ToastrService } from 'ngx-toastr';
 import { Store } from '@ngrx/store';
 import { RootReducerState } from 'src/app/store';
 import { getUser } from 'src/app/store/Authentication/authentication-selector';
-import { Subscription } from 'rxjs';
+import { Subscription, forkJoin, of, catchError } from 'rxjs';
 
 interface Articulo {
   arti_Id: number;
   arti_Codigo: string;
   arti_Descripcion: string;
-  lotes: string;
-  stockTotal?: number;
-  lotesDisponibles?: any[];
+  lotes?: string;
+  /** `stock_Disponible` devuelto por /Articulos/Listar */
+  stock: number;
+  lotesDisponibles: any[];
 }
 
 interface DetalleItem {
@@ -56,13 +57,13 @@ export class CreateComponent implements OnInit, OnDestroy {
   // Catálogos
   sucursales: any[] = [];
   vehiculos: any[] = [];
-  empleados: any[] = [];
   articulos: Articulo[] = [];
   
   // Formulario
   sucs_Id: number | null = null;
   vehi_Id: number | null = null;
-  sali_Transportista: number | null = null;
+  /** Texto libre del transportista (ya no es FK a empleado). */
+  transportistaTexto = '';
   
   // Grid de Detalles
   detalles: DetalleItem[] = [];
@@ -124,39 +125,137 @@ export class CreateComponent implements OnInit, OnDestroy {
       error: (err) => console.error('Error cargando vehículos:', err)
     });
 
-    // Cargar Empleados
-    this.http.get<any>(`${environment.apiUrl}/Empleados/Listar`, {
-      headers: { 'x-api-key': environment.apiKey }
+    // Artículos desde /Articulos/Listar (incluye stock_Disponible) + /Lotes/Listar para FIFO y payload de lotes.
+    // Si Lotes/Listar falla, el stock mostrado sigue siendo el del catálogo de artículos.
+    forkJoin({
+      articulos: this.http
+        .get<any>(`${environment.apiUrl}/Articulos/Listar`, {
+          headers: { 'x-api-key': environment.apiKey }
+        })
+        .pipe(
+          catchError((err) => {
+            console.error('Error Articulos/Listar:', err);
+            return of({ success: false, data: [] });
+          })
+        ),
+      lotes: this.http
+        .get<any>(`${environment.apiUrl}/Lotes/Listar`, {
+          headers: { 'x-api-key': environment.apiKey }
+        })
+        .pipe(
+          catchError((err) => {
+            console.error('Error Lotes/Listar:', err);
+            return of({ success: false, data: [], _lotesRequestFailed: true });
+          })
+        )
     }).subscribe({
-      next: (res) => {
-        if (res.success) this.empleados = res.data;
-      },
-      error: (err) => console.error('Error cargando empleados:', err)
-    });
+      next: ({ articulos: resArt, lotes: resLotes }) => {
+        const artsRaw = this.extraerArrayRespuestaApi(resArt);
+        const lotesRaw = this.extraerArrayRespuestaApi(resLotes);
+        const articulosOk =
+          resArt?.success === true ||
+          resArt?.Success === true ||
+          artsRaw.length > 0;
 
-    // Cargar Artículos con Stock
-    this.http.get<any>(`${environment.apiUrl}/Articulos/ListarConDetalle`, {
-      headers: { 'x-api-key': environment.apiKey }
-    }).subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.articulos = res.data.map((art: Articulo) => {
-            const lotes = art.lotes ? JSON.parse(art.lotes) : [];
-            const stockTotal = lotes.reduce((sum: number, l: any) => sum + (l.Lote_CantidadDisponible || 0), 0);
-            return {
-              ...art,
-              lotesDisponibles: lotes,
-              stockTotal: stockTotal
-            };
-          }).filter((art: Articulo) => (art.stockTotal || 0) > 0); // Solo artículos con stock
+        if (!articulosOk && artsRaw.length === 0) {
+          this.articulos = [];
+          this.toastService.warning('No se pudieron cargar los artículos');
+        } else {
+          if (resLotes?._lotesRequestFailed) {
+            console.warn(
+              'Lotes/Listar falló: el stock en pantalla viene de Articulos/Listar; no se podrá armar la salida por FIFO hasta que los lotes carguen.'
+            );
+          }
+          this.articulos = this.mezclarArticulosConLotes(artsRaw, lotesRaw);
         }
         this.cargando = false;
       },
       error: (err) => {
-        console.error('Error cargando artículos:', err);
+        console.error('Error cargando artículos o lotes:', err);
+        this.toastService.error('Error al cargar artículos para la salida');
         this.cargando = false;
       }
     });
+  }
+
+  /** Extrae un arreglo típico de `data` / `Data` o cuerpo array. */
+  private extraerArrayRespuestaApi(res: any): any[] {
+    if (!res) return [];
+    const d = res.data ?? res.Data;
+    if (Array.isArray(d)) return d;
+    if (Array.isArray(res)) return res;
+    return [];
+  }
+
+  private normalizarIdArticulo(val: unknown): number | null {
+    const n = Number(val);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  /** Convierte un registro de lote (API o anidado en artículo) al shape usado por FIFO. */
+  private normalizarLoteParaFifo(l: any): {
+    Lote_Id: number;
+    Lote_Codigo: string;
+    Lote_CantidadDisponible: number;
+    Lote_CostoUnitario: number;
+    Lote_FechaVencimiento: string;
+  } | null {
+    const disp = Number(l.Lote_CantidadDisponible ?? l.lote_CantidadDisponible ?? 0);
+    if (disp <= 0) return null;
+    const loteId = Number(l.Lote_Id ?? l.lote_Id);
+    if (!Number.isFinite(loteId) || loteId <= 0) return null;
+    return {
+      Lote_Id: loteId,
+      Lote_Codigo: String(l.Lote_Codigo ?? l.lote_Codigo ?? ''),
+      Lote_CantidadDisponible: disp,
+      Lote_CostoUnitario: Number(l.Lote_CostoUnitario ?? l.lote_CostoUnitario ?? 0),
+      Lote_FechaVencimiento: String(l.Lote_FechaVencimiento ?? l.lote_FechaVencimiento ?? '')
+    };
+  }
+
+  /** Une catálogo de /Articulos/Listar con /Lotes/Listar y, si hace falta, tbLotes del propio artículo. */
+  private mezclarArticulosConLotes(artsRaw: any[], lotesRaw: any[]): Articulo[] {
+    const lotesPorArticulo = new Map<number, any[]>();
+    for (const l of lotesRaw) {
+      const artiId = this.normalizarIdArticulo(l.arti_Id ?? l.Arti_Id);
+      if (artiId === null) continue;
+      const normalizado = this.normalizarLoteParaFifo(l);
+      if (!normalizado) continue;
+      const arr = lotesPorArticulo.get(artiId) ?? [];
+      arr.push(normalizado);
+      lotesPorArticulo.set(artiId, arr);
+    }
+
+    return artsRaw
+      .map((art: any) => {
+        const artiId = this.normalizarIdArticulo(art.arti_Id ?? art.Arti_Id);
+        if (artiId === null) return null;
+        let lotesDisponibles = (lotesPorArticulo.get(artiId) ?? []).slice();
+        if (lotesDisponibles.length === 0) {
+          const nested = art.tbLotes ?? art.TbLotes ?? [];
+          const arrNested = Array.isArray(nested) ? nested : [];
+          for (const l of arrNested) {
+            const n = this.normalizarLoteParaFifo(l);
+            if (n) {
+              lotesDisponibles.push(n);
+            }
+          }
+        }
+        const stock = Number(
+          art.stock_Disponible ??
+            art.Stock_Disponible ??
+            art.stockDisponible ??
+            0
+        );
+        return {
+          arti_Id: artiId,
+          arti_Codigo: art.arti_Codigo ?? art.Arti_Codigo ?? '',
+          arti_Descripcion: art.arti_Descripcion ?? art.Arti_Descripcion ?? '',
+          lotesDisponibles,
+          stock: Number.isFinite(stock) ? stock : 0
+        };
+      })
+      .filter((a): a is Articulo => a !== null);
   }
 
   agregarDetalle(): void {
@@ -169,8 +268,8 @@ export class CreateComponent implements OnInit, OnDestroy {
     if (!articulo) return;
 
     // Validar stock
-    if (this.cantidadSeleccionada > (articulo.stockTotal || 0)) {
-      this.toastService.error(`Stock insuficiente. Disponible: ${articulo.stockTotal}`);
+    if (this.cantidadSeleccionada > articulo.stock) {
+      this.toastService.error(`Stock insuficiente. Disponible: ${articulo.stock}`);
       return;
     }
 
@@ -185,7 +284,11 @@ export class CreateComponent implements OnInit, OnDestroy {
     const resultadoFIFO = this.calcularCostosConFIFO(articulo, this.cantidadSeleccionada);
     
     if (!resultadoFIFO) {
-      this.toastService.error('Error al calcular costos. Intente nuevamente.');
+      if (!articulo.lotesDisponibles?.length) {
+        this.toastService.error(
+          'No hay lotes para este artículo (FIFO). Incluya tbLotes en Articulos/Listar o habilite el endpoint de lotes.'
+        );
+      }
       return;
     }
 
@@ -195,7 +298,7 @@ export class CreateComponent implements OnInit, OnDestroy {
       arti_Codigo: articulo.arti_Codigo,
       arti_Descripcion: articulo.arti_Descripcion,
       cantidad: this.cantidadSeleccionada,
-      stockDisponible: articulo.stockTotal || 0,
+      stockDisponible: articulo.stock,
       costoUnitarioPromedio: resultadoFIFO.costoUnitarioPromedio,
       costoTotal: resultadoFIFO.costoTotal,
       lotesUsados: resultadoFIFO.lotesUsados
@@ -215,7 +318,7 @@ export class CreateComponent implements OnInit, OnDestroy {
     costoTotal: number;
     lotesUsados: LoteUsado[];
   } | null {
-    if (!articulo.lotesDisponibles || articulo.lotesDisponibles.length === 0) {
+    if (!articulo.lotesDisponibles?.length) {
       return null;
     }
 
@@ -434,16 +537,30 @@ export class CreateComponent implements OnInit, OnDestroy {
     const usuarioId = this.userData.usua_Id as number;
     const fechaCreacion = this.obtenerFechaCreacionIso() as string;
 
-    const request = {
+    const transportistaTrim = this.transportistaTexto.trim();
+    const request: {
+      sucs_Id: number;
+      sali_UsuarioEnvia: number;
+      vehi_Id: number;
+      sali_Transportista: number;
+      sali_Creacion: number;
+      sali_FechaCreacion: string;
+      lote_Id: number;
+      detalles: ReturnType<CreateComponent['construirDetallesParaApi']>;
+      transportista?: string;
+    } = {
       sucs_Id: this.sucs_Id as number,
       sali_UsuarioEnvia: usuarioId,
       vehi_Id: this.vehi_Id ?? 0,
-      sali_Transportista: this.sali_Transportista ?? 0,
+      sali_Transportista: 0,
       sali_Creacion: usuarioId,
       sali_FechaCreacion: fechaCreacion,
       lote_Id: 0,
       detalles: this.construirDetallesParaApi(),
     };
+    if (transportistaTrim) {
+      request.transportista = transportistaTrim;
+    }
 
     this.guardando = true;
     this.http.post<any>(`${environment.apiUrl}/Salidas/Insertar`, request, {
@@ -482,7 +599,7 @@ export class CreateComponent implements OnInit, OnDestroy {
   resetForm(): void {
     this.sucs_Id = null;
     this.vehi_Id = null;
-    this.sali_Transportista = null;
+    this.transportistaTexto = '';
     this.detalles = [];
     this.articuloSeleccionado = null;
     this.cantidadSeleccionada = 1;

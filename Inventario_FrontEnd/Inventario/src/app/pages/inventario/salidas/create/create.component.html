@@ -53,12 +53,13 @@
 
         <div class="col-md-3">
           <label class="form-label fw-bold">Transportista</label>
-          <select class="form-select" [(ngModel)]="sali_Transportista" [disabled]="guardando">
-            <option [ngValue]="null">Sin transportista asignado</option>
-            <option *ngFor="let emp of empleados" [ngValue]="emp.empl_Id">
-              {{emp.nombreCompleto}}
-            </option>
-          </select>
+          <input
+            type="text"
+            class="form-control"
+            [(ngModel)]="transportistaTexto"
+            [disabled]="guardando"
+            placeholder="Nombre o empresa transportista"
+            autocomplete="organization" />
         </div>
       </div>
 
@@ -72,7 +73,7 @@
           <select class="form-select" [(ngModel)]="articuloSeleccionado" [disabled]="guardando">
             <option [ngValue]="null">Seleccione un artículo...</option>
             <option *ngFor="let art of articulos" [ngValue]="art.arti_Id">
-              {{art.arti_Codigo}} - {{art.arti_Descripcion}} (Stock: {{art.stockTotal}})
+              {{art.arti_Codigo}} - {{art.arti_Descripcion}} (Stock: {{art.stock}})
             </option>
           </select>
         </div>
