@@ -594,15 +594,6 @@ export class CreateComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Genera texto para tooltip con información de lotes
-   */
-  getLotesTooltip(item: DetalleItem): string {
-    return item.lotesUsados.map(lote => 
-      `${lote.lote_Codigo}: ${lote.cantidad} uds @ L${lote.costoUnitario.toFixed(2)} (Vto: ${new Date(lote.fechaVencimiento).toLocaleDateString()})`
-    ).join('\n');
-  }
-
   resetForm(): void {
     this.sucs_Id = null;
     this.vehi_Id = null;

@@ -8,7 +8,10 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Salidas } from 'src/app/Models/Inventario/Salidas.Model';
+import {
+  Salidas,
+  buildSalidaRecibirRequest,
+} from 'src/app/Models/Inventario/Salidas.Model';
 import { environment } from 'src/environments/environment';
 import { ToastrService } from 'ngx-toastr';
 import { Store } from '@ngrx/store';
@@ -88,6 +91,26 @@ export class DetailsComponent implements OnChanges {
   esEstadoRecibida(estado: string | undefined | null): boolean {
     const e = (estado || '').toLowerCase();
     return e.includes('recib');
+  }
+
+  /** Texto del vehículo: marca y modelo desde `ObtenerCompleta`, o texto legado / id. */
+  etiquetaVehiculo(): string {
+    const s = this.salidaDetalle;
+    if (!s) return '—';
+    const legado = s.vehiculo;
+    if (legado && String(legado).trim()) return String(legado).trim();
+
+    const marca = String(s.vehi_Marca ?? s.Vehi_Marca ?? '').trim();
+    const modelo = String(s.vehi_Modelo ?? s.Vehi_Modelo ?? '').trim();
+    if (marca && modelo) return `${marca} ${modelo}`;
+    if (marca) return marca;
+    if (modelo) return modelo;
+
+    const id = s.vehi_Id ?? s.Vehi_Id;
+    if (id != null && Number(id) > 0) {
+      return `Vehículo #${id}`;
+    }
+    return 'No asignado';
   }
 
   private cargarDetallesCompletos(sali_Id: number): void {
@@ -175,10 +198,10 @@ export class DetailsComponent implements OnChanges {
 
     this.mostrarConfirmacion = false;
 
-    const request = {
-      sali_Id: this.salidaDetalle.sali_Id,
-      usua_Creacion: this.userData.usua_Id,
-    };
+    const request = buildSalidaRecibirRequest(
+      this.salidaDetalle.sali_Id,
+      this.userData.usua_Id as number
+    );
 
     this.cargando = true;
     const url = `${environment.apiUrl}/Salidas/Recibir`;
@@ -192,22 +215,38 @@ export class DetailsComponent implements OnChanges {
       })
       .subscribe({
         next: (response) => {
-          if (response.success) {
+          const ok =
+            response?.success === true ||
+            response?.Success === true ||
+            response?.code === 200;
+          if (ok) {
             this.toastService.success(
-              response.message || 'Salida recibida exitosamente'
+              response.message ||
+                response.Message ||
+                'Salida recibida exitosamente'
             );
             this.onRecibir.emit();
             this.cerrar();
           } else {
             this.toastService.error(
-              response.message || 'Error al recibir la salida'
+              response.message ||
+                response.Message ||
+                'Error al recibir la salida'
             );
           }
           this.cargando = false;
         },
         error: (error) => {
           console.error('Error recibiendo salida:', error);
-          this.toastService.error('Error de conexión al recibir la salida');
+          const body = error?.error;
+          const msg =
+            body?.message ||
+            body?.Message ||
+            body?.title ||
+            (typeof body === 'string' ? body : null);
+          this.toastService.error(
+            msg || 'Error al recibir la salida. Verifique los datos o intente de nuevo.'
+          );
           this.cargando = false;
         },
       });

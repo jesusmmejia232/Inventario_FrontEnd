@@ -70,29 +70,32 @@
               <thead class="table-light">
                 <tr>
                   <th scope="col">Acciones</th>
-                  <th scope="col" class="sort" (click)="table.sortBy('secuencia')" style="cursor: pointer;">
-                    No. 
+                  <th scope="col" class="sort" (click)="table.sortBy('sali_Id')" style="cursor: pointer;">
+                    Nº salida
                   </th>
                   <th scope="col" class="sort" (click)="table.sortBy('sali_FechaSalida')" style="cursor: pointer;">
-                    Fecha 
+                    Fecha
                   </th>
                   <th scope="col" class="sort" (click)="table.sortBy('sucursalDestino')" style="cursor: pointer;">
-                    Sucursal 
+                    Sucursal
                   </th>
                   <th scope="col" class="text-center">
-                    Unidades 
+                    Unidades
                   </th>
                   <th scope="col" class="sort" (click)="table.sortBy('sali_EstadoSalida')" style="cursor: pointer;">
-                    Estado 
+                    Estado
                   </th>
                   <th scope="col" class="sort" (click)="table.sortBy('sali_CostoTotal')" style="cursor: pointer;">
-                    Costo Total 
+                    Costo total
+                  </th>
+                  <th scope="col" class="sort" (click)="table.sortBy('usuarioEnvia')" style="cursor: pointer;">
+                    Usuario envía
                   </th>
                   <th scope="col" class="sort" (click)="table.sortBy('usuarioRecibe')" style="cursor: pointer;">
-                    Usuario Recibió 
+                    Usuario recibió
                   </th>
                   <th scope="col" class="sort" (click)="table.sortBy('sali_FechaRecepcion')" style="cursor: pointer;">
-                    Fecha Recibió 
+                    Fecha recibió
                   </th>
                 </tr>
               </thead>
@@ -108,7 +111,7 @@
                       </button>
                     </div>
                   </td>
-                  <td>{{data.secuencia}}</td>
+                  <td class="fw-medium">{{ data.sali_Id }}</td>
                   <td>{{data.sali_FechaSalida | date:'dd/MM/yyyy HH:mm'}}</td>
                   <td>{{data.sucursalDestino || 'N/A'}}</td>
                   <td class="text-center">
@@ -125,6 +128,9 @@
                   </td>
                   <td>L {{data.sali_CostoTotal | number:'1.2-2'}}</td>
                   <td>
+                    <span class="text-muted"><i class="ri-user-send-line me-1"></i>{{ etiquetaUsuarioEnvia(data) }}</span>
+                  </td>
+                  <td>
                     <span *ngIf="data.usuarioRecibe" class="text-success">
                       <i class="ri-user-check-line me-1"></i>{{data.usuarioRecibe}}
                     </span>
@@ -136,7 +142,7 @@
                   </td>
                 </tr>
                 <tr *ngIf="(table.total$ | async) === 0">
-                  <td colspan="9" class="text-center">No hay registros encontrados</td>
+                  <td colspan="10" class="text-center">No hay registros encontrados</td>
                 </tr>
               </tbody>
             </table>

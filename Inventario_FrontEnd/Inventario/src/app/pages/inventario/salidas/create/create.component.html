@@ -95,46 +95,45 @@
 
       <div class="text-danger small mb-2" *ngIf="submitted && errores.detalles">{{ errores.detalles }}</div>
 
-      <!-- Grid de Productos Agregados -->
+      <!-- Grid: una fila por lote (id producto, nombre, cantidad, lote, costo, vencimiento) -->
       <div class="table-responsive mb-4" [class.border]="submitted && errores.detalles" [class.border-danger]="submitted && errores.detalles" [class.rounded]="submitted && errores.detalles">
-        <table class="table table-bordered table-striped align-middle mb-0">
+        <table class="table table-bordered table-striped align-middle mb-0 salidas-create-grid">
           <thead class="table-light">
             <tr>
-              <th scope="col">Código</th>
-              <th scope="col">Artículo</th>
+              <th scope="col">Id producto</th>
+              <th scope="col">Nombre</th>
               <th scope="col" class="text-center">Cantidad</th>
-              <th scope="col" class="text-end">Costo Unit. Prom.</th>
-              <th scope="col" class="text-end">Subtotal</th>
-              <th scope="col" class="text-center">Lotes Usados</th>
+              <th scope="col">Lote</th>
+              <th scope="col" class="text-end">Costo unit.</th>
+              <th scope="col" class="text-end">Subtotal lote</th>
+              <th scope="col">Vencimiento</th>
               <th scope="col" class="text-center" style="width: 100px;">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let item of detalles; let i = index">
-              <td>{{item.arti_Codigo}}</td>
-              <td>{{item.arti_Descripcion}}</td>
-              <td class="text-center fw-bold">{{item.cantidad}}</td>
-              <td class="text-end">L {{item.costoUnitarioPromedio | number:'1.2-2'}}</td>
-              <td class="text-end fw-bold text-primary">L {{item.costoTotal | number:'1.2-2'}}</td>
-              <td class="text-center">
-                <button type="button" 
-                        class="btn btn-sm btn-light" 
-                        [attr.data-bs-toggle]="'tooltip'" 
-                        [attr.title]="getLotesTooltip(item)"
-                        [disabled]="guardando">
-                  <i class="ri-file-list-line"></i> {{item.lotesUsados.length}}
-                </button>
-              </td>
-              <td class="text-center">
-                <button type="button" class="btn btn-sm btn-soft-danger" 
-                        (click)="eliminarDetalle(i)" 
-                        [disabled]="guardando">
-                  <i class="ri-delete-bin-line"></i>
-                </button>
-              </td>
-            </tr>
+            <ng-container *ngFor="let item of detalles; let i = index">
+              <tr *ngFor="let lote of item.lotesUsados; let j = index">
+                <td *ngIf="j === 0" [attr.rowspan]="item.lotesUsados.length" class="text-muted small">
+                  {{ item.arti_Id }}<span class="d-block text-body small">{{ item.arti_Codigo }}</span>
+                </td>
+                <td *ngIf="j === 0" [attr.rowspan]="item.lotesUsados.length">{{ item.arti_Descripcion }}</td>
+                <td class="text-center fw-bold">{{ lote.cantidad }}</td>
+                <td><code class="small">{{ lote.lote_Codigo }}</code></td>
+                <td class="text-end">L {{ lote.costoUnitario | number:'1.2-2' }}</td>
+                <td class="text-end fw-bold text-primary">L {{ (lote.cantidad * lote.costoUnitario) | number:'1.2-2' }}</td>
+                <td>{{ lote.fechaVencimiento | date:'dd/MM/yyyy' }}</td>
+                <td *ngIf="j === 0" [attr.rowspan]="item.lotesUsados.length" class="text-center align-middle">
+                  <button type="button" class="btn btn-sm btn-soft-danger"
+                          (click)="eliminarDetalle(i)"
+                          [disabled]="guardando"
+                          title="Quitar línea completa del artículo">
+                    <i class="ri-delete-bin-line"></i>
+                  </button>
+                </td>
+              </tr>
+            </ng-container>
             <tr *ngIf="detalles.length === 0">
-              <td colspan="7" class="text-center text-muted py-4">
+              <td colspan="8" class="text-center text-muted py-4">
                 No hay productos agregados a la salida
               </td>
             </tr>
@@ -142,10 +141,10 @@
           <tfoot class="table-light" *ngIf="detalles.length > 0">
             <tr>
               <td colspan="2" class="text-end fw-bold">Totales:</td>
-              <td class="text-center fw-bold text-info">{{unidadesTotales}}</td>
-              <td colspan="1"></td>
-              <td class="text-end fw-bold text-primary fs-5">L {{costoTotalSalida | number:'1.2-2'}}</td>
-              <td colspan="2"></td>
+              <td class="text-center fw-bold text-info">{{ unidadesTotales }}</td>
+              <td colspan="3"></td>
+              <td class="text-end fw-bold text-primary fs-5">L {{ costoTotalSalida | number:'1.2-2' }}</td>
+              <td></td>
             </tr>
           </tfoot>
         </table>

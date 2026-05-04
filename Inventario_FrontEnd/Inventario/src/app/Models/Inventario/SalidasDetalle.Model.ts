@@ -13,6 +13,7 @@ export class SalidasDetalle {
   sade_FechaModificacion?: Date;
   code_Status: number = 0;
   secuencia: number = 0;
+  Vehi_Modelo?: string;
   message_Status: string = '';
 
   constructor(init?: Partial<SalidasDetalle>) {

@@ -17,7 +17,10 @@ import { Observable, Subscription } from 'rxjs';
 import { SharedModule } from 'src/app/shared/shared.module';
 import { ReactiveTableService } from 'src/app/shared/services/reactive-table.service';
 import { FloatingMenuService } from 'src/app/shared/services/floating-menu.service';
-import { Salidas } from 'src/app/Models/Inventario/Salidas.Model';
+import {
+  Salidas,
+  buildSalidaRecibirRequest,
+} from 'src/app/Models/Inventario/Salidas.Model';
 import { GlobalComponent } from 'src/app/global-component';
 import { environment } from 'src/environments/environment';
 import { ConfirmationComponent } from '../confirmation/confirmation.component';
@@ -64,13 +67,14 @@ export class ListComponent implements OnInit, OnDestroy {
   ) {
     this.puedeCrearSalida$ = this.store.select(selectPuedeCrearSalida);
     this.table.setConfig([
-      'secuencia',
+      'sali_Id',
       'sali_FechaSalida',
       'sucursalDestino',
       'sali_EstadoSalida',
       'sali_CostoTotal',
+      'usuarioEnvia',
       'usuarioRecibe',
-      'sali_FechaRecepcion'
+      'sali_FechaRecepcion',
     ]);
   }
 
@@ -126,6 +130,15 @@ export class ListComponent implements OnInit, OnDestroy {
     return (estado || '').toLowerCase().includes('recib');
   }
 
+  etiquetaUsuarioEnvia(row: Salidas): string {
+    const u = row.usuarioEnvia ?? row.Usua_NombreUsuario;
+    if (u) return String(u);
+    if (row.sali_UsuarioEnvia != null && row.sali_UsuarioEnvia > 0) {
+      return 'Usuario #' + row.sali_UsuarioEnvia;
+    }
+    return '—';
+  }
+
   verDetallesSalida(event: MouseEvent, salida: Salidas): void {
     event.stopPropagation();
     event.preventDefault();
@@ -167,10 +180,10 @@ export class ListComponent implements OnInit, OnDestroy {
     const salida = this.salidaARecibir;
     this.mostrarConfirmacion = false;
 
-    const request = {
-      sali_Id: salida.sali_Id,
-      usua_Creacion: this.userData.usua_Id,
-    };
+    const request = buildSalidaRecibirRequest(
+      salida.sali_Id,
+      this.userData.usua_Id as number
+    );
 
     this.mostrarOverlayCarga = true;
     const url = `${environment.apiUrl}/Salidas/Recibir`;
@@ -184,21 +197,37 @@ export class ListComponent implements OnInit, OnDestroy {
       })
       .subscribe({
         next: (response) => {
-          if (response.success) {
+          const ok =
+            response?.success === true ||
+            response?.Success === true ||
+            response?.code === 200;
+          if (ok) {
             this.toastService.success(
-              response.message || 'Salida recibida exitosamente'
+              response.message ||
+                response.Message ||
+                'Salida recibida exitosamente'
             );
             this.cargardatos();
           } else {
             this.toastService.error(
-              response.message || 'Error al recibir la salida'
+              response.message ||
+                response.Message ||
+                'Error al recibir la salida'
             );
           }
           this.mostrarOverlayCarga = false;
         },
         error: (error) => {
           console.error('Error recibiendo salida:', error);
-          this.toastService.error('Error de conexión al recibir la salida');
+          const body = error?.error;
+          const msg =
+            body?.message ||
+            body?.Message ||
+            body?.title ||
+            (typeof body === 'string' ? body : null);
+          this.toastService.error(
+            msg || 'Error al recibir la salida. Verifique los datos o intente de nuevo.'
+          );
           this.mostrarOverlayCarga = false;
         },
       });
@@ -249,14 +278,7 @@ export class ListComponent implements OnInit, OnDestroy {
               );
             }
 
-            const dataConSecuencia = data.map(
-              (item: Salidas, index: number) => ({
-                ...item,
-                secuencia: index + 1,
-              })
-            );
-
-            this.table.setData(dataConSecuencia);
+            this.table.setData(data as Salidas[]);
           } else {
             this.table.setData([]);
             this.mostrarMensaje('error', 'Formato de respuesta inesperado');

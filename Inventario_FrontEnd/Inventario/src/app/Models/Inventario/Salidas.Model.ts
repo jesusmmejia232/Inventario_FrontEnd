@@ -26,10 +26,33 @@ export class Salidas {
     usuarioEnvia?: string;
     usuarioRecibe?: string;
     vehiculo?: string;
+    /** Desde `Salidas/ObtenerCompleta` u otras lecturas extendidas */
+    vehi_Marca?: string;
+    vehi_Modelo?: string;
     transportista?: string;
     detalleSalida?: string; // JSON string
 
     constructor(init?: Partial<Salidas>) {
         Object.assign(this, init);
     }
+}
+
+/** Cuerpo esperado por `PUT /Salidas/Recibir`. */
+export interface SalidaRecibirRequest {
+    code_Status: number;
+    message_Status: string;
+    sali_Id: number;
+    usua_Creacion: number;
+}
+
+export function buildSalidaRecibirRequest(
+    sali_Id: number,
+    usua_Creacion: number
+): SalidaRecibirRequest {
+    return {
+        code_Status: 0,
+        message_Status: '',
+        sali_Id,
+        usua_Creacion,
+    };
 }

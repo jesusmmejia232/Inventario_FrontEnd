@@ -36,7 +36,7 @@
     <div class="row g-3 mb-4">
       <div class="col-md-4">
         <label class="form-label fw-bold text-muted">Vehículo</label>
-        <p class="mb-0">{{ salidaDetalle.vehiculo || (salidaDetalle.vehi_Id != null ? 'Vehículo #' + salidaDetalle.vehi_Id : 'No asignado') }}</p>
+        <p class="mb-0">{{ etiquetaVehiculo() }}</p>
       </div>
       <div class="col-md-4">
         <label class="form-label fw-bold text-muted">Transportista</label>
