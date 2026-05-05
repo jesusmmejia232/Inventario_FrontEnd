@@ -25,6 +25,19 @@ import { GlobalComponent } from 'src/app/global-component';
 import { environment } from 'src/environments/environment';
 import { ConfirmationComponent } from '../confirmation/confirmation.component';
 
+/** Columna «Unidades» del listado: `Salidas/Listar` envía la suma en `Sade_Cantidad` (o `unidadesTotales`). */
+function unidadesSalidaListadoDesdeApi(item: any): number {
+  const raw =
+    item?.unidadesTotales ??
+    item?.Sade_Cantidad ??
+    item?.sade_Cantidad;
+  const n =
+    raw === undefined || raw === null || raw === ''
+      ? 0
+      : Number(raw);
+  return Number.isFinite(n) ? n : 0;
+}
+
 @Component({
   selector: 'app-list',
   standalone: true,
@@ -128,6 +141,11 @@ export class ListComponent implements OnInit, OnDestroy {
 
   esEstadoRecibida(estado: string | undefined | null): boolean {
     return (estado || '').toLowerCase().includes('recib');
+  }
+
+  /** Valor mostrado en la columna Unidades del listar (misma fuente que la normalización al cargar). */
+  unidadesListado(row: Salidas): number {
+    return unidadesSalidaListadoDesdeApi(row);
   }
 
   etiquetaUsuarioEnvia(row: Salidas): string {
@@ -278,7 +296,15 @@ export class ListComponent implements OnInit, OnDestroy {
               );
             }
 
-            this.table.setData(data as Salidas[]);
+            const dataNormalizada = data.map(
+              (item: any) =>
+                ({
+                  ...item,
+                  unidadesTotales: unidadesSalidaListadoDesdeApi(item),
+                }) as Salidas
+            );
+
+            this.table.setData(dataNormalizada);
           } else {
             this.table.setData([]);
             this.mostrarMensaje('error', 'Formato de respuesta inesperado');

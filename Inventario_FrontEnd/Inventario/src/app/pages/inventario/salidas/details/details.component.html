@@ -25,7 +25,7 @@
       </div>
       <div class="col-md-4">
         <label class="form-label fw-bold text-muted">Sucursal destino</label>
-        <p class="mb-0">{{ salidaDetalle.sucursalDestino || (salidaDetalle.sucs_Id != null ? 'Sucursal #' + salidaDetalle.sucs_Id : 'N/A') }}</p>
+        <p class="mb-0">{{ salidaDetalle.Sucs_Descripcion || salidaDetalle.sucs_Descripcion || salidaDetalle.sucursalDestino || 'N/A' }}</p>
       </div>
       <div class="col-md-4">
         <label class="form-label fw-bold text-muted">Costo Total</label>
@@ -88,8 +88,9 @@
               <ng-template #soloArtiId>Artículo #{{ item.artiId }}</ng-template>
             </td>
             <td>
-              <span *ngIf="item.loteCodigo" class="badge bg-info-subtle text-info">{{item.loteCodigo}}</span>
-              <span *ngIf="!item.loteCodigo">Lote #{{ item.loteId }}</span>
+              <span *ngIf="item.loteAtributo1" class="badge bg-info-subtle text-info">{{item.loteAtributo1}}</span>
+              <span *ngIf="!item.loteAtributo1 && item.loteCodigo" class="badge bg-info-subtle text-info">{{item.loteCodigo}}</span>
+              <span *ngIf="!item.loteAtributo1 && !item.loteCodigo">Lote #{{ item.loteId }}</span>
             </td>
             <td class="text-center">{{item.cantidad}}</td>
             <td class="text-end">L {{item.costoUnitario | number:'1.2-2'}}</td>

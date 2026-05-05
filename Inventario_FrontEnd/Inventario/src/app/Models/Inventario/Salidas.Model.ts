@@ -22,7 +22,10 @@ export class Salidas {
     // Propiedades de Lectura (API Response)
     secuencia?: number; // Para ordenamiento en tabla
     sucursalDestino?: string;
+    /** Suma de unidades; en listados la API puede enviarla como `Sade_Cantidad` / `sade_Cantidad`. */
     unidadesTotales?: number;
+    Sade_Cantidad?: number;
+    sade_Cantidad?: number;
     usuarioEnvia?: string;
     usuarioRecibe?: string;
     vehiculo?: string;

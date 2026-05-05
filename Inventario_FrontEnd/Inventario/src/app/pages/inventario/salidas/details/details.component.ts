@@ -30,6 +30,8 @@ export interface DetalleSalidaFila {
   artiCodigo?: string;
   articulo?: string;
   loteCodigo?: string;
+  /** Descripción de lote desde API (`Lote_Atributo1`). */
+  loteAtributo1?: string;
 }
 
 import { ConfirmationComponent } from '../confirmation/confirmation.component';
@@ -170,8 +172,13 @@ export class DetailsComponent implements OnChanges {
       vencimiento: ven,
       subtotal: cant * cpu,
       artiCodigo: r.Arti_Codigo ?? r.arti_Codigo,
-      articulo: r.Articulo ?? r.arti_Descripcion,
+      articulo:
+        r.Arti_Descripcion ??
+        r.arti_Descripcion ??
+        r.Articulo ??
+        r.articulo,
       loteCodigo: r.Lote_Codigo ?? r.lote_Codigo,
+      loteAtributo1: r.Lote_Atributo1 ?? r.lote_Atributo1,
     };
   }
 

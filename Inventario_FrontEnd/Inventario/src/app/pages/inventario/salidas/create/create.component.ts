@@ -544,7 +544,11 @@ export class CreateComponent implements OnInit, OnDestroy {
     const usuarioId = this.userData.usua_Id as number;
     const fechaCreacion = this.obtenerFechaCreacionIso() as string;
 
-    /** Cuerpo según contrato /Salidas/Insertar */
+    /**
+     * Cuerpo /Salidas/Insertar.
+     * El costo total de la salida no se envía: el SP lo calcula desde el JSON de detalles
+     * (cantidad × costo unitario por línea). Aquí seguimos usando `costoTotalSalida` solo para UI y validación local del tope.
+     */
     const request: {
       code_Status: number;
       message_Status: string;
@@ -577,12 +581,52 @@ export class CreateComponent implements OnInit, OnDestroy {
       }
     }).subscribe({
       next: (res) => {
-        if (res.success) {
-          this.toastService.success(res.message || 'Salida creada exitosamente');
+        const raw = res?.data;
+        const sp = Array.isArray(raw) ? raw[0] : raw;
+        const codeStatus =
+          sp?.code_Status ?? sp?.Code_Status ?? null;
+        const msgSp =
+          (sp?.message_Status ?? sp?.Message_Status ?? '').trim();
+        const msgTop = (res?.message ?? res?.Message ?? '').trim();
+        const msg = msgSp || msgTop;
+
+        if (codeStatus === 1) {
+          this.toastService.success(
+            msg || 'Salida creada exitosamente',
+            'Éxito'
+          );
           this.onSave.emit(new Salidas());
           this.resetForm();
+        } else if (codeStatus === 2) {
+          /* Tope L 5.000 u otra regla de negocio del SP: advertencia, sin navegar ni limpiar */
+          this.toastService.warning(
+            msg || 'No se puede registrar la salida.',
+            'Advertencia'
+          );
+        } else if (codeStatus === -1) {
+          this.toastService.error(
+            msg || 'Error al crear la salida',
+            'Error'
+          );
+        } else if (codeStatus != null) {
+          this.toastService.error(
+            msg || 'No se pudo registrar la salida.',
+            'Error'
+          );
+        } else if (res.success) {
+          /* Respuesta sin fila SP: evitar éxito verde si el texto es de validación de negocio */
+          if (/supera|l[ií]mite|5[.,]000|5000|no se puede registrar/i.test(msg)) {
+            this.toastService.warning(msg, 'Advertencia');
+          } else {
+            this.toastService.success(
+              msg || 'Salida creada exitosamente',
+              'Éxito'
+            );
+            this.onSave.emit(new Salidas());
+            this.resetForm();
+          }
         } else {
-          this.toastService.error(res.message || 'Error al crear la salida');
+          this.toastService.error(msg || 'Error al crear la salida');
         }
         this.guardando = false;
       },

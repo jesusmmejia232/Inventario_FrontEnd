@@ -15,6 +15,7 @@ export class SalidasDetalle {
   secuencia: number = 0;
   Vehi_Modelo?: string;
   message_Status: string = '';
+  Sucs_Descripcion?: string;
 
   constructor(init?: Partial<SalidasDetalle>) {
     Object.assign(this, init);

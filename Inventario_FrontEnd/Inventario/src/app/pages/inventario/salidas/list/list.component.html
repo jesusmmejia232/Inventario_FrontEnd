@@ -115,7 +115,7 @@
                   <td>{{data.sali_FechaSalida | date:'dd/MM/yyyy HH:mm'}}</td>
                   <td>{{data.sucursalDestino || 'N/A'}}</td>
                   <td class="text-center">
-                    <span class="badge bg-info-subtle text-info">{{data.unidadesTotales || 0}}</span>
+                    <span class="badge bg-info-subtle text-info">{{ unidadesListado(data) }}</span>
                   </td>
                   <td>
                     <span class="badge" 
