@@ -27,6 +27,8 @@ export class Salidas {
     Sade_Cantidad?: number;
     sade_Cantidad?: number;
     usuarioEnvia?: string;
+    /** Nombre desde listado cuando la API envía snake_case (`usuario_Envia`). */
+    usuario_Envia?: string;
     usuarioRecibe?: string;
     vehiculo?: string;
     /** Desde `Salidas/ObtenerCompleta` u otras lecturas extendidas */

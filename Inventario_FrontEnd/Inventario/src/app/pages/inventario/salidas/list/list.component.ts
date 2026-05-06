@@ -12,7 +12,8 @@ import {
   selectPuedeCrearSalida,
 } from 'src/app/store/Authentication/authentication-selector';
 import { esAdminUsuario, esJefeBodegaUsuario } from 'src/app/Models/Acceso/Usuario.model';
-import { Observable, Subscription } from 'rxjs';
+import { from, Observable, of, Subscription } from 'rxjs';
+import { catchError, map, mergeMap } from 'rxjs/operators';
 
 import { SharedModule } from 'src/app/shared/shared.module';
 import { ReactiveTableService } from 'src/app/shared/services/reactive-table.service';
@@ -24,6 +25,7 @@ import {
 import { GlobalComponent } from 'src/app/global-component';
 import { environment } from 'src/environments/environment';
 import { ConfirmationComponent } from '../confirmation/confirmation.component';
+import { InventoryService } from 'src/app/shared/services/inventory.service';
 
 /** Columna «Unidades» del listado: `Salidas/Listar` envía la suma en `Sade_Cantidad` (o `unidadesTotales`). */
 function unidadesSalidaListadoDesdeApi(item: any): number {
@@ -58,6 +60,7 @@ export class ListComponent implements OnInit, OnDestroy {
   userData: any;
   puedeCrearSalida$: Observable<boolean>;
   private userSubscription?: Subscription;
+  private unidadesDetalleSubscription?: Subscription;
 
   sucursales: any[] = [];
   filtroSucursal: number | null = null;
@@ -76,7 +79,8 @@ export class ListComponent implements OnInit, OnDestroy {
     private http: HttpClient,
     private toastService: ToastrService,
     private store: Store<RootReducerState>,
-    private router: Router
+    private router: Router,
+    private inventoryService: InventoryService
   ) {
     this.puedeCrearSalida$ = this.store.select(selectPuedeCrearSalida);
     this.table.setConfig([
@@ -108,6 +112,9 @@ export class ListComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.userSubscription) {
       this.userSubscription.unsubscribe();
+    }
+    if (this.unidadesDetalleSubscription) {
+      this.unidadesDetalleSubscription.unsubscribe();
     }
   }
 
@@ -149,7 +156,11 @@ export class ListComponent implements OnInit, OnDestroy {
   }
 
   etiquetaUsuarioEnvia(row: Salidas): string {
-    const u = row.usuarioEnvia ?? row.Usua_NombreUsuario;
+    const u =
+      row.usuarioEnvia ??
+      row.usuario_Envia ??
+      (row as any).Usuario_Envia ??
+      row.Usua_NombreUsuario;
     if (u) return String(u);
     if (row.sali_UsuarioEnvia != null && row.sali_UsuarioEnvia > 0) {
       return 'Usuario #' + row.sali_UsuarioEnvia;
@@ -301,10 +312,17 @@ export class ListComponent implements OnInit, OnDestroy {
                 ({
                   ...item,
                   unidadesTotales: unidadesSalidaListadoDesdeApi(item),
+                  usuarioEnvia:
+                    item.usuarioEnvia ??
+                    item.usuario_Envia ??
+                    item.Usuario_Envia ??
+                    item.Usua_NombreUsuario,
                 }) as Salidas
             );
 
             this.table.setData(dataNormalizada);
+            // Recalcular Unidades desde `ObtenerCompleta` por cada salida (sumando `Sade_Cantidad` del detalle).
+            this.actualizarUnidadesDesdeObtenerCompleta(dataNormalizada);
           } else {
             this.table.setData([]);
             this.mostrarMensaje('error', 'Formato de respuesta inesperado');
@@ -318,6 +336,68 @@ export class ListComponent implements OnInit, OnDestroy {
           this.mostrarMensaje('error', 'Error al cargar los datos');
         },
       });
+  }
+
+  private actualizarUnidadesDesdeObtenerCompleta(rows: Salidas[]): void {
+    if (!Array.isArray(rows) || rows.length === 0) return;
+
+    if (this.unidadesDetalleSubscription) {
+      this.unidadesDetalleSubscription.unsubscribe();
+      this.unidadesDetalleSubscription = undefined;
+    }
+
+    const porId = new Map<number, Salidas>();
+    for (const r of rows) {
+      if (r?.sali_Id != null && Number(r.sali_Id) > 0) {
+        porId.set(Number(r.sali_Id), r);
+      }
+    }
+
+    // Ejecuta en paralelo con límite de concurrencia para no saturar el backend.
+    this.unidadesDetalleSubscription = from(Array.from(porId.keys()))
+      .pipe(
+        mergeMap(
+          (id) =>
+            this.inventoryService.getSalidaDetalle(id).pipe(
+              map((res) => ({
+                id,
+                unidades: this.sumarSadeCantidadDesdeDetalleSalida(
+                  res?.data?.detalleSalida
+                ),
+              })),
+              catchError(() => of({ id, unidades: 0 }))
+            ),
+          6
+        )
+      )
+      .subscribe(({ id, unidades }) => {
+        const row = porId.get(id);
+        if (!row) return;
+        row.unidadesTotales = unidades;
+        row.Sade_Cantidad = unidades;
+        // Emitir nuevamente para refrescar la tabla.
+        const current = this.table.data$.value;
+        this.table.data$.next([...current]);
+      });
+  }
+
+  private sumarSadeCantidadDesdeDetalleSalida(detalleSalida: unknown): number {
+    try {
+      let raw: any[] = [];
+      if (typeof detalleSalida === 'string' && detalleSalida.trim()) {
+        raw = JSON.parse(detalleSalida);
+      } else if (Array.isArray(detalleSalida)) {
+        raw = detalleSalida;
+      }
+      let total = 0;
+      for (const r of raw) {
+        const n = Number(r?.Sade_Cantidad ?? r?.sade_Cantidad ?? 0);
+        if (Number.isFinite(n)) total += n;
+      }
+      return total;
+    } catch {
+      return 0;
+    }
   }
 
   private mostrarMensaje(tipo: 'error' | 'success', mensaje: string): void {
