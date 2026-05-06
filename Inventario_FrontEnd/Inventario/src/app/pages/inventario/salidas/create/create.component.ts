@@ -2,6 +2,7 @@ import { Component, Output, EventEmitter, OnInit, OnDestroy } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { NgSelectModule } from '@ng-select/ng-select';
 import { Salidas } from 'src/app/Models/Inventario/Salidas.Model';
 import { environment } from 'src/environments/environment';
 import { ToastrService } from 'ngx-toastr';
@@ -42,7 +43,7 @@ interface LoteUsado {
 @Component({
   selector: 'app-create',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, NgSelectModule],
   templateUrl: './create.component.html',
   styleUrls: ['./create.component.scss']
 })
@@ -89,6 +90,22 @@ export class CreateComponent implements OnInit, OnDestroy {
   } = {};
 
   private readonly msgCamposIncompletos = 'Favor llene todos los campos';
+
+  buscarVehiculo = (term: string, item: any): boolean => {
+    const t = (term || '').toLowerCase().trim();
+    if (!t) return true;
+    const modelo = String(item?.vehi_Modelo ?? '').toLowerCase();
+    const placa = String(item?.vehi_Placa ?? '').toLowerCase();
+    return modelo.includes(t) || placa.includes(t);
+  };
+
+  buscarArticulo = (term: string, item: Articulo): boolean => {
+    const t = (term || '').toLowerCase().trim();
+    if (!t) return true;
+    const codigo = String(item?.arti_Codigo ?? '').toLowerCase();
+    const desc = String(item?.arti_Descripcion ?? '').toLowerCase();
+    return codigo.includes(t) || desc.includes(t);
+  };
 
   constructor(
     private http: HttpClient,

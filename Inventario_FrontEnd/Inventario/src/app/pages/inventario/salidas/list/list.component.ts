@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { PaginationModule } from 'ngx-bootstrap/pagination';
 import { ToastrService } from 'ngx-toastr';
 import { Store } from '@ngrx/store';
+import { NgSelectModule } from '@ng-select/ng-select';
 import { RootReducerState } from 'src/app/store';
 import {
   getUser,
@@ -47,6 +48,7 @@ function unidadesSalidaListadoDesdeApi(item: any): number {
     CommonModule,
     FormsModule,
     RouterModule,
+    NgSelectModule,
     SharedModule,
     PaginationModule,
     ConfirmationComponent

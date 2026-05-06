@@ -17,12 +17,18 @@
         <div class="salidas-filters row g-3 mb-3">
           <div class="col-md-3">
             <label class="form-label fw-bold">Sucursal</label>
-            <select class="form-select" [(ngModel)]="filtroSucursal">
-              <option [ngValue]="null">Todas las sucursales</option>
-              <option *ngFor="let suc of sucursales" [ngValue]="suc.sucs_Id">
-                {{suc.sucs_Descripcion}}
-              </option>
-            </select>
+            <ng-select
+              [items]="sucursales"
+              bindLabel="sucs_Descripcion"
+              bindValue="sucs_Id"
+              [(ngModel)]="filtroSucursal"
+              [searchable]="true"
+              [clearable]="true"
+              placeholder="Todas las sucursales">
+              <ng-template ng-option-tmp let-item="item">
+                {{ item.sucs_Descripcion }}
+              </ng-template>
+            </ng-select>
           </div>
 
           <div class="col-md-3">

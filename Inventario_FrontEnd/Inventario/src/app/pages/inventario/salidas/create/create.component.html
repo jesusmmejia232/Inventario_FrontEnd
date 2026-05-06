@@ -15,17 +15,21 @@
       <div class="salidas-create-filters row g-3 mb-4">
         <div class="col-md-3">
           <label class="form-label fw-bold">Sucursal <span class="text-danger">*</span></label>
-          <select
-            class="form-select"
+          <ng-select
+            [items]="sucursales"
+            bindLabel="sucs_Descripcion"
+            bindValue="sucs_Id"
             [(ngModel)]="sucs_Id"
             (ngModelChange)="errores.sucs = undefined"
-            [class.is-invalid]="submitted && errores.sucs"
-            [disabled]="guardando">
-            <option [ngValue]="null">Seleccione una sucursal...</option>
-            <option *ngFor="let suc of sucursales" [ngValue]="suc.sucs_Id">
-              {{suc.sucs_Descripcion}}
-            </option>
-          </select>
+            [searchable]="true"
+            [clearable]="true"
+            [disabled]="guardando"
+            [ngClass]="{ 'is-invalid': submitted && errores.sucs }"
+            placeholder="Seleccione una sucursal...">
+            <ng-template ng-option-tmp let-item="item">
+              {{ item.sucs_Descripcion }}
+            </ng-template>
+          </ng-select>
           <div class="invalid-feedback" *ngIf="submitted && errores.sucs?.trim()">{{ errores.sucs }}</div>
         </div>
 
@@ -43,17 +47,24 @@
 
         <div class="col-md-3">
           <label class="form-label fw-bold">Vehículo <span class="text-danger">*</span></label>
-          <select
-            class="form-select"
+          <ng-select
+            [items]="vehiculos"
+            bindValue="vehi_Id"
             [(ngModel)]="vehi_Id"
             (ngModelChange)="errores.vehi = undefined"
-            [class.is-invalid]="submitted && errores.vehi"
-            [disabled]="guardando">
-            <option [ngValue]="null">Seleccione un vehículo...</option>
-            <option *ngFor="let veh of vehiculos" [ngValue]="veh.vehi_Id">
-              {{veh.vehi_Modelo}} - {{veh.vehi_Placa}}
-            </option>
-          </select>
+            [searchable]="true"
+            [searchFn]="buscarVehiculo"
+            [clearable]="true"
+            [disabled]="guardando"
+            [ngClass]="{ 'is-invalid': submitted && errores.vehi }"
+            placeholder="Seleccione un vehículo...">
+            <ng-template ng-label-tmp let-item="item">
+              {{ item?.vehi_Modelo }} - {{ item?.vehi_Placa }}
+            </ng-template>
+            <ng-template ng-option-tmp let-item="item">
+              {{ item?.vehi_Modelo }} - {{ item?.vehi_Placa }}
+            </ng-template>
+          </ng-select>
         </div>
 
         <div class="col-md-3">
@@ -77,17 +88,24 @@
       <div class="row g-3 align-items-end mb-4 p-3 rounded salidas-muted-panel">
         <div class="col-md-7">
           <label class="form-label fw-bold">Artículo <span class="text-danger">*</span></label>
-          <select
-            class="form-select"
+          <ng-select
+            [items]="articulos"
+            bindValue="arti_Id"
             [(ngModel)]="articuloSeleccionado"
             (ngModelChange)="errores.articulo = undefined"
-            [class.is-invalid]="submitted && errores.articulo"
-            [disabled]="guardando">
-            <option [ngValue]="null">Seleccione un artículo...</option>
-            <option *ngFor="let art of articulos" [ngValue]="art.arti_Id">
-              {{art.arti_Codigo}} - {{art.arti_Descripcion}} (Stock: {{art.stock}})
-            </option>
-          </select>
+            [searchable]="true"
+            [searchFn]="buscarArticulo"
+            [clearable]="true"
+            [disabled]="guardando"
+            [ngClass]="{ 'is-invalid': submitted && errores.articulo }"
+            placeholder="Seleccione un artículo...">
+            <ng-template ng-label-tmp let-item="item">
+              {{ item?.arti_Codigo }} - {{ item?.arti_Descripcion }}
+            </ng-template>
+            <ng-template ng-option-tmp let-item="item">
+              {{ item?.arti_Codigo }} - {{ item?.arti_Descripcion }} (Stock: {{ item?.stock }})
+            </ng-template>
+          </ng-select>
         </div>
 
         <div class="col-md-3">
