@@ -664,6 +664,7 @@ export class CreateComponent implements OnInit, OnDestroy {
       sali_Transportista: number;
       sali_Creacion: number;
       sali_FechaCreacion: string;
+      sali_FechaSalida: string;
       lote_Id: number;
       detalles: ReturnType<CreateComponent['construirDetallesParaApi']>;
     } = {
@@ -675,6 +676,8 @@ export class CreateComponent implements OnInit, OnDestroy {
       sali_Transportista: 0,
       sali_Creacion: usuarioId,
       sali_FechaCreacion: fechaCreacion,
+      // Requerimiento: la fecha de salida será la misma del input de “Fecha creación”.
+      sali_FechaSalida: fechaCreacion,
       lote_Id: 0,
       detalles: this.construirDetallesParaApi(),
     };

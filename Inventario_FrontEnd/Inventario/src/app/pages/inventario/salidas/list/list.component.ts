@@ -41,6 +41,60 @@ function unidadesSalidaListadoDesdeApi(item: any): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+function parseFechaFlexible(value: unknown): Date | null {
+  if (!value) return null;
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+
+  const s = String(value).trim();
+  if (!s) return null;
+
+  // 1) ISO / formatos parseables por JS Date (ej. 2026-05-06T00:07:19.057)
+  const d1 = new Date(s);
+  if (!Number.isNaN(d1.getTime())) return d1;
+
+  // 2) dd/MM/yyyy o dd/MM/yyyy HH:mm(:ss)?
+  const m = s.match(
+    /^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/
+  );
+  if (m) {
+    const dd = Number(m[1]);
+    const mm = Number(m[2]);
+    const yyyy = Number(m[3]);
+    const HH = Number(m[4] ?? 0);
+    const MI = Number(m[5] ?? 0);
+    const SS = Number(m[6] ?? 0);
+    const d = new Date(yyyy, mm - 1, dd, HH, MI, SS, 0);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  return null;
+}
+
+function fechaSalidaDesdeApi(item: any): Date | null {
+  // Algunos endpoints envían fecha como `sali_FechaSalida`; otros como `sali_FechaCreacion`.
+  // Tomamos la primera que sea válida.
+  return (
+    parseFechaFlexible(item?.sali_FechaSalida ?? item?.Sali_FechaSalida) ||
+    parseFechaFlexible(item?.sali_FechaCreacion ?? item?.Sali_FechaCreacion) ||
+    parseFechaFlexible(item?.sali_FechaModificacion ?? item?.Sali_FechaModificacion)
+  );
+}
+
+function parseDateInputLocal(value: string, endOfDay: boolean): Date | null {
+  const s = (value || '').trim();
+  if (!s) return null;
+  // Esperado de <input type="date">: YYYY-MM-DD
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  const yyyy = Number(m[1]);
+  const mm = Number(m[2]);
+  const dd = Number(m[3]);
+  if (!Number.isFinite(yyyy) || !Number.isFinite(mm) || !Number.isFinite(dd)) return null;
+  return endOfDay
+    ? new Date(yyyy, mm - 1, dd, 23, 59, 59, 999)
+    : new Date(yyyy, mm - 1, dd, 0, 0, 0, 0);
+}
+
 @Component({
   selector: 'app-list',
   standalone: true,
@@ -295,18 +349,27 @@ export class ListComponent implements OnInit, OnDestroy {
             }
 
             if (this.filtroFechaInicio) {
-              const fechaInicio = new Date(this.filtroFechaInicio);
-              data = data.filter(
-                (item: any) => new Date(item.sali_FechaSalida) >= fechaInicio
-              );
+              const fechaInicio =
+                parseDateInputLocal(this.filtroFechaInicio, false) ??
+                new Date(this.filtroFechaInicio);
+              data = data.filter((item: any) => {
+                const f = fechaSalidaDesdeApi(item);
+                return f ? f >= fechaInicio : false;
+              });
             }
 
             if (this.filtroFechaFin) {
-              const fechaFin = new Date(this.filtroFechaFin);
-              fechaFin.setHours(23, 59, 59, 999);
-              data = data.filter(
-                (item: any) => new Date(item.sali_FechaSalida) <= fechaFin
-              );
+              const fechaFin =
+                parseDateInputLocal(this.filtroFechaFin, true) ??
+                (() => {
+                  const d = new Date(this.filtroFechaFin);
+                  d.setHours(23, 59, 59, 999);
+                  return d;
+                })();
+              data = data.filter((item: any) => {
+                const f = fechaSalidaDesdeApi(item);
+                return f ? f <= fechaFin : false;
+              });
             }
 
             const dataNormalizada = data.map(
