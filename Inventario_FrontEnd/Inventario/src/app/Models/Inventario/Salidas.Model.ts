@@ -11,6 +11,7 @@ export class Salidas {
     sali_FechaRecepcion?: Date;
     sali_GuiaRemision?: string;
     sali_Estado: boolean = true;
+    Usua_NombreUsuario: string = "";
     
     // Auditoría
     sali_Creacion: number = 0;
@@ -21,14 +22,42 @@ export class Salidas {
     // Propiedades de Lectura (API Response)
     secuencia?: number; // Para ordenamiento en tabla
     sucursalDestino?: string;
+    /** Suma de unidades; en listados la API puede enviarla como `Sade_Cantidad` / `sade_Cantidad`. */
     unidadesTotales?: number;
+    Sade_Cantidad?: number;
+    sade_Cantidad?: number;
     usuarioEnvia?: string;
+    /** Nombre desde listado cuando la API envía snake_case (`usuario_Envia`). */
+    usuario_Envia?: string;
     usuarioRecibe?: string;
     vehiculo?: string;
+    /** Desde `Salidas/ObtenerCompleta` u otras lecturas extendidas */
+    vehi_Marca?: string;
+    vehi_Modelo?: string;
     transportista?: string;
     detalleSalida?: string; // JSON string
 
     constructor(init?: Partial<Salidas>) {
         Object.assign(this, init);
     }
+}
+
+/** Cuerpo esperado por `PUT /Salidas/Recibir`. */
+export interface SalidaRecibirRequest {
+    code_Status: number;
+    message_Status: string;
+    sali_Id: number;
+    usua_Creacion: number;
+}
+
+export function buildSalidaRecibirRequest(
+    sali_Id: number,
+    usua_Creacion: number
+): SalidaRecibirRequest {
+    return {
+        code_Status: 0,
+        message_Status: '',
+        sali_Id,
+        usua_Creacion,
+    };
 }

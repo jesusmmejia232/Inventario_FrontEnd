@@ -112,9 +112,10 @@
   *ngIf="floatingMenuService.show"
   class="dropdown-menu show"  
   [ngStyle]="{
-    position: 'absolute',
+    position: 'fixed',
     top: floatingMenuService.top + 'px',
-    left: floatingMenuService.left + 'px'
+    left: floatingMenuService.left + 'px',
+    minWidth: '10rem'
   }"
   style="z-index: 10000;">
   <li>

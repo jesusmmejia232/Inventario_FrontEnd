@@ -347,6 +347,75 @@ ngx-dropzone-preview {
   }
 }
 
+/* Salidas / create: validación de campos incompletos (naranja, texto negro) */
+.toast-campos-incompletos {
+  background-image: none !important;
+  background-color: #fd7e14 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18) !important;
+
+  .toast-title {
+    display: none !important;
+  }
+
+  .toast-message {
+    color: #000 !important;
+    font-weight: 600;
+  }
+
+  .toast-progress {
+    background-color: rgba(0, 0, 0, 0.25) !important;
+  }
+}
+
+/* ngx-toastr: advertencias (warning) con texto negro (por defecto viene en blanco) */
+.toast-container .ngx-toastr.toast-warning,
+#toast-container .ngx-toastr.toast-warning {
+  color: #000 !important;
+
+  .toast-title,
+  .toast-message {
+    color: #000 !important;
+  }
+
+  .toast-message a,
+  .toast-message label {
+    color: #000 !important;
+  }
+
+  .toast-message a:hover {
+    color: #212529 !important;
+  }
+
+  .toast-close-button {
+    color: #000 !important;
+    text-shadow: none;
+
+    &:hover,
+    &:focus {
+      color: #000 !important;
+      opacity: 0.75;
+    }
+  }
+}
+
+/* Alertas Bootstrap tipo advertencia: texto negro */
+.alert.alert-warning,
+.alert-warning {
+  color: #000 !important;
+
+  .alert-heading,
+  p,
+  li,
+  span:not(.btn) {
+    color: #000 !important;
+  }
+
+  a:not(.btn) {
+    color: #000 !important;
+    text-decoration: underline;
+  }
+}
+
 .dropdown-responsive {
   left: 0 !important;
 }
@@ -409,4 +478,43 @@ bs-dropdown-container {
 
 .stepper-body {
   padding: 0px !important;
+}
+
+// Lienzo alineado con login (#121a2c, #1a2744, acento #f58220) — versión clara legible
+#layout-wrapper > .main-content {
+  position: relative;
+  min-height: 100vh;
+  background-color: #e8ecf4;
+  background-image:
+    radial-gradient(ellipse 100% 70% at 92% -8%, rgba(245, 130, 32, 0.14) 0%, transparent 45%),
+    radial-gradient(ellipse 85% 60% at -8% 102%, rgba(18, 26, 44, 0.12) 0%, transparent 48%),
+    linear-gradient(165deg, #f4f6fb 0%, #e9edf5 38%, #eef0f7 72%, #f7f2ee 100%);
+  background-repeat: no-repeat;
+}
+
+#layout-wrapper .page-content {
+  background-color: transparent;
+}
+
+// Pie anclado al ancho del área principal (corrige corte / hueco respecto al menú)
+#layout-wrapper .main-content app-footer {
+  display: block;
+  width: 100%;
+}
+
+#layout-wrapper .main-content .footer {
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin-left: 0 !important;
+  background-color: rgba(255, 255, 255, 0.82) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(245, 130, 32, 0.18);
+}
+
+// Barra superior: misma familia cromática que el login (solo acento sutil)
+[data-layout="vertical"] #page-topbar {
+  border-bottom-color: rgba(245, 130, 32, 0.22);
 }

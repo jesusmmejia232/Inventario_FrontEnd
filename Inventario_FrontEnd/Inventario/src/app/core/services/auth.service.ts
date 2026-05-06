@@ -9,13 +9,12 @@ import { GlobalComponent } from '../../global-component';
 import { environment } from '../../../environments/environment';
 import {
   login,
-  loginSuccess,
   loginFailure,
   logout,
   logoutSuccess,
   RegisterSuccess,
 } from '../../store/Authentication/authentication.actions';
-import { UsuarioLogin } from '../../Models/Acceso/Usuario.model';
+import { normalizeUsuarioLogin, UsuarioLogin } from '../../Models/Acceso/Usuario.model';
 
 const AUTH_API = GlobalComponent.AUTH_API;
 
@@ -30,6 +29,7 @@ function buildIniciarSesionBody(
     message_Status: '',
     usua_Id: 0,
     usua_NombreUsuario,
+    usuarioRecibe: '',
     usua_Clave,
     usua_EsAdmin: false,
     empl_Id: 0,
@@ -98,10 +98,9 @@ export class AuthenticationService {
           // Verificar si el login fue exitoso usando code_Status
           // 1 = Éxito, -1 = Advertencia, 0 = Error
           if (response.data && response.data.code_Status === 1) {
-            const user = response.data;
+            const user = normalizeUsuarioLogin(response.data as Record<string, unknown>);
             localStorage.setItem('currentUser', JSON.stringify(user));
             this.currentUserSubject.next(user);
-            this.store.dispatch(loginSuccess({ user }));
             return response;
           } else {
             const errorMessage =

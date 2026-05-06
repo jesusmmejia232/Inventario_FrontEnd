@@ -19,8 +19,9 @@ export class FloatingMenuService {
     }
 
     this.show = true;
-    this.top = rect.bottom + window.scrollY;
-    this.left = rect.left + window.scrollX;
+    // Viewport coords: usar con position:fixed en la plantilla (no sumar scroll: con absolute desalinea).
+    this.top = rect.bottom;
+    this.left = rect.left;
     this.data = data;
 
     setTimeout(() => {

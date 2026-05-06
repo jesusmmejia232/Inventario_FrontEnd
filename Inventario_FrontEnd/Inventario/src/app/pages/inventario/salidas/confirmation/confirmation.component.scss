@@ -1,0 +1,37 @@
+@use '../salidas-theme' as *;
+
+.salidas-confirmation {
+  .modal-content {
+    border: 1px solid rgba(20, 26, 47, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 20px 48px rgba(20, 26, 47, 0.2);
+  }
+
+  .modal-header {
+    background: linear-gradient(165deg, $sd-bg-from 0%, $sd-bg-to 100%);
+    color: #fff;
+    border-bottom: 1px solid $sd-accent-border;
+
+    .modal-title {
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .btn-close {
+      filter: invert(1);
+      opacity: 0.75;
+    }
+  }
+
+  .modal-footer .btn-success {
+    background: $sd-accent;
+    border-color: $sd-accent;
+    font-weight: 600;
+
+    &:hover {
+      background: $sd-accent-hover;
+      border-color: $sd-accent-hover;
+    }
+  }
+}

@@ -1,8 +1,10 @@
 export interface UsuarioLogin {
   usua_Id?: number;
   usua_NombreUsuario?: string;
+  usuarioRecibe?: string;
   usua_Clave?: string | null;
   usua_EsAdmin?: boolean;
+  sucs_Id?: number;
   empl_Id?: number;
   usua_Estado?: boolean;
   usua_Creacion?: number;
@@ -22,6 +24,40 @@ export interface UsuarioLogin {
   
   code_Status?: number;
   message_Status?: string;
+}
+
+function flagTruthy(v: unknown): boolean {
+  return v === true || v === 1 || v === '1';
+}
+
+/** API puede enviar 0/1; unifica a boolean para el store y la UI. */
+export function normalizeUsuarioLogin(raw: Record<string, unknown> | null | undefined): UsuarioLogin {
+  if (!raw || typeof raw !== 'object') {
+    return {};
+  }
+  const { usua_Clave: _omit, ...rest } = raw;
+  const adminVal = raw['usua_EsAdmin'];
+  const jefeVal = raw['empl_EsJefeBodega'];
+  const emplId = raw['empl_Id'];
+  const sucsId = raw['sucs_Id'];
+  return {
+    ...(rest as UsuarioLogin),
+    usua_Id: Number(raw['usua_Id']) || 0,
+    empl_Id: emplId != null ? Number(emplId) : undefined,
+    sucs_Id: sucsId != null ? Number(sucsId) : undefined,
+    usua_EsAdmin: flagTruthy(adminVal),
+    empl_EsJefeBodega: flagTruthy(jefeVal),
+  };
+}
+
+export function esJefeBodegaUsuario(u: UsuarioLogin | null | undefined): boolean {
+  if (!u) return false;
+  return flagTruthy(u.empl_EsJefeBodega);
+}
+
+export function esAdminUsuario(u: UsuarioLogin | null | undefined): boolean {
+  if (!u) return false;
+  return flagTruthy(u.usua_EsAdmin);
 }
 
 export class Usuario {

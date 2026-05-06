@@ -2,21 +2,23 @@ import { Component, Output, EventEmitter, OnInit, OnDestroy } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { NgSelectModule } from '@ng-select/ng-select';
 import { Salidas } from 'src/app/Models/Inventario/Salidas.Model';
 import { environment } from 'src/environments/environment';
 import { ToastrService } from 'ngx-toastr';
 import { Store } from '@ngrx/store';
 import { RootReducerState } from 'src/app/store';
 import { getUser } from 'src/app/store/Authentication/authentication-selector';
-import { Subscription } from 'rxjs';
+import { Subscription, forkJoin, of, catchError } from 'rxjs';
 
 interface Articulo {
   arti_Id: number;
   arti_Codigo: string;
   arti_Descripcion: string;
-  lotes: string;
-  stockTotal?: number;
-  lotesDisponibles?: any[];
+  lotes?: string;
+  /** `stock_Disponible` devuelto por /Articulos/Listar */
+  stock: number;
+  lotesDisponibles: any[];
 }
 
 interface DetalleItem {
@@ -41,7 +43,7 @@ interface LoteUsado {
 @Component({
   selector: 'app-create',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, NgSelectModule],
   templateUrl: './create.component.html',
   styleUrls: ['./create.component.scss']
 })
@@ -56,13 +58,13 @@ export class CreateComponent implements OnInit, OnDestroy {
   // Catálogos
   sucursales: any[] = [];
   vehiculos: any[] = [];
-  empleados: any[] = [];
   articulos: Articulo[] = [];
   
   // Formulario
   sucs_Id: number | null = null;
   vehi_Id: number | null = null;
-  sali_Transportista: number | null = null;
+  /** Texto libre del transportista (ya no es FK a empleado). */
+  transportistaTexto = '';
   
   // Grid de Detalles
   detalles: DetalleItem[] = [];
@@ -74,6 +76,36 @@ export class CreateComponent implements OnInit, OnDestroy {
   // Estado
   cargando = false;
   guardando = false;
+  /** Valor para input datetime-local (fecha/hora de creación de la salida) */
+  saliFechaCreacionInput = '';
+  submitted = false;
+  errores: {
+    sucs?: string;
+    fecha?: string;
+    vehi?: string;
+    transportista?: string;
+    articulo?: string;
+    cantidad?: string;
+    detalles?: string;
+  } = {};
+
+  private readonly msgCamposIncompletos = 'Favor llene todos los campos';
+
+  buscarVehiculo = (term: string, item: any): boolean => {
+    const t = (term || '').toLowerCase().trim();
+    if (!t) return true;
+    const modelo = String(item?.vehi_Modelo ?? '').toLowerCase();
+    const placa = String(item?.vehi_Placa ?? '').toLowerCase();
+    return modelo.includes(t) || placa.includes(t);
+  };
+
+  buscarArticulo = (term: string, item: Articulo): boolean => {
+    const t = (term || '').toLowerCase().trim();
+    if (!t) return true;
+    const codigo = String(item?.arti_Codigo ?? '').toLowerCase();
+    const desc = String(item?.arti_Descripcion ?? '').toLowerCase();
+    return codigo.includes(t) || desc.includes(t);
+  };
 
   constructor(
     private http: HttpClient,
@@ -86,7 +118,8 @@ export class CreateComponent implements OnInit, OnDestroy {
     this.userSubscription = this.store.select(getUser).subscribe((user) => {
       this.userData = user;
     });
-    
+
+    this.saliFechaCreacionInput = this.toDateTimeLocalValue(new Date());
     this.cargarCatalogos();
   }
 
@@ -119,44 +152,152 @@ export class CreateComponent implements OnInit, OnDestroy {
       error: (err) => console.error('Error cargando vehículos:', err)
     });
 
-    // Cargar Empleados
-    this.http.get<any>(`${environment.apiUrl}/Empleados/Listar`, {
-      headers: { 'x-api-key': environment.apiKey }
+    // Artículos desde /Articulos/Listar (incluye stock_Disponible) + /Lotes/Listar para FIFO y payload de lotes.
+    // Si Lotes/Listar falla, el stock mostrado sigue siendo el del catálogo de artículos.
+    forkJoin({
+      articulos: this.http
+        .get<any>(`${environment.apiUrl}/Articulos/Listar`, {
+          headers: { 'x-api-key': environment.apiKey }
+        })
+        .pipe(
+          catchError((err) => {
+            console.error('Error Articulos/Listar:', err);
+            return of({ success: false, data: [] });
+          })
+        ),
+      lotes: this.http
+        .get<any>(`${environment.apiUrl}/Lotes/Listar`, {
+          headers: { 'x-api-key': environment.apiKey }
+        })
+        .pipe(
+          catchError((err) => {
+            console.error('Error Lotes/Listar:', err);
+            return of({ success: false, data: [], _lotesRequestFailed: true });
+          })
+        )
     }).subscribe({
-      next: (res) => {
-        if (res.success) this.empleados = res.data;
-      },
-      error: (err) => console.error('Error cargando empleados:', err)
-    });
+      next: ({ articulos: resArt, lotes: resLotes }) => {
+        const artsRaw = this.extraerArrayRespuestaApi(resArt);
+        const lotesRaw = this.extraerArrayRespuestaApi(resLotes);
+        const articulosOk =
+          resArt?.success === true ||
+          resArt?.Success === true ||
+          artsRaw.length > 0;
 
-    // Cargar Artículos con Stock
-    this.http.get<any>(`${environment.apiUrl}/Articulos/ListarConDetalle`, {
-      headers: { 'x-api-key': environment.apiKey }
-    }).subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.articulos = res.data.map((art: Articulo) => {
-            const lotes = art.lotes ? JSON.parse(art.lotes) : [];
-            const stockTotal = lotes.reduce((sum: number, l: any) => sum + (l.Lote_CantidadDisponible || 0), 0);
-            return {
-              ...art,
-              lotesDisponibles: lotes,
-              stockTotal: stockTotal
-            };
-          }).filter((art: Articulo) => (art.stockTotal || 0) > 0); // Solo artículos con stock
+        if (!articulosOk && artsRaw.length === 0) {
+          this.articulos = [];
+          this.toastService.warning('No se pudieron cargar los artículos');
+        } else {
+          if (resLotes?._lotesRequestFailed) {
+            console.warn(
+              'Lotes/Listar falló: el stock en pantalla viene de Articulos/Listar; no se podrá armar la salida por FIFO hasta que los lotes carguen.'
+            );
+          }
+          this.articulos = this.mezclarArticulosConLotes(artsRaw, lotesRaw);
         }
         this.cargando = false;
       },
       error: (err) => {
-        console.error('Error cargando artículos:', err);
+        console.error('Error cargando artículos o lotes:', err);
+        this.toastService.error('Error al cargar artículos para la salida');
         this.cargando = false;
       }
     });
   }
 
+  /** Extrae un arreglo típico de `data` / `Data` o cuerpo array. */
+  private extraerArrayRespuestaApi(res: any): any[] {
+    if (!res) return [];
+    const d = res.data ?? res.Data;
+    if (Array.isArray(d)) return d;
+    if (Array.isArray(res)) return res;
+    return [];
+  }
+
+  private normalizarIdArticulo(val: unknown): number | null {
+    const n = Number(val);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  /** Convierte un registro de lote (API o anidado en artículo) al shape usado por FIFO. */
+  private normalizarLoteParaFifo(l: any): {
+    Lote_Id: number;
+    Lote_Codigo: string;
+    Lote_CantidadDisponible: number;
+    Lote_CostoUnitario: number;
+    Lote_FechaVencimiento: string;
+  } | null {
+    // Ignorar lotes inactivos si el API lo indica (lote_Estado / Lote_Estado).
+    const estadoRaw = l?.Lote_Estado ?? l?.lote_Estado;
+    if (estadoRaw !== undefined && estadoRaw !== null) {
+      const activo = Boolean(estadoRaw);
+      if (!activo) return null;
+    }
+    const disp = Number(l.Lote_CantidadDisponible ?? l.lote_CantidadDisponible ?? 0);
+    if (disp <= 0) return null;
+    const loteId = Number(l.Lote_Id ?? l.lote_Id);
+    if (!Number.isFinite(loteId) || loteId <= 0) return null;
+    return {
+      Lote_Id: loteId,
+      Lote_Codigo: String(l.Lote_Codigo ?? l.lote_Codigo ?? ''),
+      Lote_CantidadDisponible: disp,
+      Lote_CostoUnitario: Number(l.Lote_CostoUnitario ?? l.lote_CostoUnitario ?? 0),
+      Lote_FechaVencimiento: String(l.Lote_FechaVencimiento ?? l.lote_FechaVencimiento ?? '')
+    };
+  }
+
+  /** Une catálogo de /Articulos/Listar con /Lotes/Listar y, si hace falta, tbLotes del propio artículo. */
+  private mezclarArticulosConLotes(artsRaw: any[], lotesRaw: any[]): Articulo[] {
+    const lotesPorArticulo = new Map<number, any[]>();
+    for (const l of lotesRaw) {
+      const artiId = this.normalizarIdArticulo(l.arti_Id ?? l.Arti_Id);
+      if (artiId === null) continue;
+      const normalizado = this.normalizarLoteParaFifo(l);
+      if (!normalizado) continue;
+      const arr = lotesPorArticulo.get(artiId) ?? [];
+      arr.push(normalizado);
+      lotesPorArticulo.set(artiId, arr);
+    }
+
+    return artsRaw
+      .map((art: any) => {
+        const artiId = this.normalizarIdArticulo(art.arti_Id ?? art.Arti_Id);
+        if (artiId === null) return null;
+        let lotesDisponibles = (lotesPorArticulo.get(artiId) ?? []).slice();
+        if (lotesDisponibles.length === 0) {
+          const nested = art.tbLotes ?? art.TbLotes ?? [];
+          const arrNested = Array.isArray(nested) ? nested : [];
+          for (const l of arrNested) {
+            const n = this.normalizarLoteParaFifo(l);
+            if (n) {
+              lotesDisponibles.push(n);
+            }
+          }
+        }
+        const stock = Number(
+          art.stock_Disponible ??
+            art.Stock_Disponible ??
+            art.stockDisponible ??
+            0
+        );
+        return {
+          arti_Id: artiId,
+          arti_Codigo: art.arti_Codigo ?? art.Arti_Codigo ?? '',
+          arti_Descripcion: art.arti_Descripcion ?? art.Arti_Descripcion ?? '',
+          lotesDisponibles,
+          stock: Number.isFinite(stock) ? stock : 0
+        };
+      })
+      .filter((a): a is Articulo => a !== null);
+  }
+
   agregarDetalle(): void {
-    if (!this.articuloSeleccionado || this.cantidadSeleccionada <= 0) {
-      this.toastService.warning('Seleccione un artículo y una cantidad válida');
+    this.submitted = true;
+    this.errores.detalles = undefined;
+    const okEncabezado = this.validarEncabezadoLleno();
+    const okLinea = this.validarLineaProducto();
+    if (!okEncabezado || !okLinea) {
+      this.mostrarAlertaCamposIncompletos();
       return;
     }
 
@@ -164,8 +305,8 @@ export class CreateComponent implements OnInit, OnDestroy {
     if (!articulo) return;
 
     // Validar stock
-    if (this.cantidadSeleccionada > (articulo.stockTotal || 0)) {
-      this.toastService.error(`Stock insuficiente. Disponible: ${articulo.stockTotal}`);
+    if (this.cantidadSeleccionada > articulo.stock) {
+      this.toastService.error(`Stock insuficiente. Disponible: ${articulo.stock}`);
       return;
     }
 
@@ -180,7 +321,11 @@ export class CreateComponent implements OnInit, OnDestroy {
     const resultadoFIFO = this.calcularCostosConFIFO(articulo, this.cantidadSeleccionada);
     
     if (!resultadoFIFO) {
-      this.toastService.error('Error al calcular costos. Intente nuevamente.');
+      if (!articulo.lotesDisponibles?.length) {
+        this.toastService.error(
+          'No hay lotes para este artículo (FIFO). Incluya tbLotes en Articulos/Listar o habilite el endpoint de lotes.'
+        );
+      }
       return;
     }
 
@@ -190,7 +335,7 @@ export class CreateComponent implements OnInit, OnDestroy {
       arti_Codigo: articulo.arti_Codigo,
       arti_Descripcion: articulo.arti_Descripcion,
       cantidad: this.cantidadSeleccionada,
-      stockDisponible: articulo.stockTotal || 0,
+      stockDisponible: articulo.stock,
       costoUnitarioPromedio: resultadoFIFO.costoUnitarioPromedio,
       costoTotal: resultadoFIFO.costoTotal,
       lotesUsados: resultadoFIFO.lotesUsados
@@ -199,6 +344,75 @@ export class CreateComponent implements OnInit, OnDestroy {
     // Resetear selección
     this.articuloSeleccionado = null;
     this.cantidadSeleccionada = 1;
+    this.errores.detalles = undefined;
+    this.errores.articulo = undefined;
+    this.errores.cantidad = undefined;
+  }
+
+  /** Encabezado obligatorio: sucursal, fecha, vehículo y transportista. */
+  private validarEncabezadoLleno(): boolean {
+    let ok = true;
+    if (!this.sucs_Id) {
+      this.errores.sucs = ' ';
+      ok = false;
+    } else {
+      this.errores.sucs = undefined;
+    }
+
+    if (!this.obtenerFechaCreacionIso()) {
+      this.errores.fecha = ' ';
+      ok = false;
+    } else {
+      this.errores.fecha = undefined;
+    }
+
+    if (this.vehi_Id == null) {
+      this.errores.vehi = ' ';
+      ok = false;
+    } else {
+      this.errores.vehi = undefined;
+    }
+
+    if (!this.transportistaTexto?.trim()) {
+      this.errores.transportista = ' ';
+      ok = false;
+    } else {
+      this.errores.transportista = undefined;
+    }
+
+    return ok;
+  }
+
+  /** Línea “Agregar productos”: artículo y cantidad ≥ 1. */
+  private validarLineaProducto(): boolean {
+    let ok = true;
+    if (!this.articuloSeleccionado) {
+      this.errores.articulo = ' ';
+      ok = false;
+    } else {
+      this.errores.articulo = undefined;
+    }
+
+    const c = Number(this.cantidadSeleccionada);
+    if (!Number.isFinite(c) || c < 1) {
+      this.errores.cantidad = ' ';
+      ok = false;
+    } else {
+      this.errores.cantidad = undefined;
+    }
+
+    return ok;
+  }
+
+  private mostrarAlertaCamposIncompletos(): void {
+    this.toastService.show(this.msgCamposIncompletos, '', {
+      timeOut: 5500,
+      toastClass: 'ngx-toastr toast-campos-incompletos',
+      messageClass: 'toast-message',
+      titleClass: 'toast-title d-none',
+      positionClass: 'toast-top-right',
+      tapToDismiss: true,
+    });
   }
 
   /**
@@ -209,11 +423,11 @@ export class CreateComponent implements OnInit, OnDestroy {
     costoTotal: number;
     lotesUsados: LoteUsado[];
   } | null {
-    if (!articulo.lotesDisponibles || articulo.lotesDisponibles.length === 0) {
+    if (!articulo.lotesDisponibles?.length) {
       return null;
     }
 
-    // Ordenar lotes por fecha de vencimiento (FIFO)
+    // Ordenar lotes por fecha de vencimiento (FEFO: vence primero, sale primero)
     const lotesOrdenados = [...articulo.lotesDisponibles].sort((a, b) => {
       const fechaA = new Date(a.Lote_FechaVencimiento);
       const fechaB = new Date(b.Lote_FechaVencimiento);
@@ -280,21 +494,108 @@ export class CreateComponent implements OnInit, OnDestroy {
     return this.detalles.reduce((sum, item) => sum + item.cantidad, 0);
   }
 
-  guardar(): void {
-    // Validaciones
-    if (!this.sucs_Id) {
-      this.toastService.warning('Seleccione una sucursal de destino');
-      return;
-    }
+  private toDateTimeLocalValue(d: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
 
+  /** yyyy-MM-dd para la API en cada detalle */
+  private formatDateOnlyForApi(fecha: string): string {
+    if (!fecha) return '';
+    const d = new Date(fecha);
+    if (Number.isNaN(d.getTime())) {
+      return fecha.slice(0, 10);
+    }
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  private obtenerFechaCreacionIso(): string | null {
+    if (!this.saliFechaCreacionInput?.trim()) {
+      return null;
+    }
+    const parsed = new Date(this.saliFechaCreacionInput);
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+    return parsed.toISOString();
+  }
+
+  /**
+   * Un registro de detalle por cada lote consumido (FIFO), con costo, vencimiento y cantidad del lote.
+   * Coincide con el DTO de /Salidas/Insertar (code_Status / message_Status en cada línea).
+   */
+  private construirDetallesParaApi(): Array<{
+    code_Status: number;
+    message_Status: string;
+    lote_Id: number;
+    sade_CostoUnitario: number;
+    sade_FechaVencimiento: string;
+    arti_Id: number;
+    sade_Cantidad: number;
+  }> {
+    const filas: Array<{
+      code_Status: number;
+      message_Status: string;
+      lote_Id: number;
+      sade_CostoUnitario: number;
+      sade_FechaVencimiento: string;
+      arti_Id: number;
+      sade_Cantidad: number;
+    }> = [];
+
+    for (const d of this.detalles) {
+      for (const l of d.lotesUsados) {
+        filas.push({
+          code_Status: 0,
+          message_Status: '',
+          lote_Id: l.lote_Id,
+          sade_CostoUnitario: l.costoUnitario,
+          sade_FechaVencimiento: this.formatDateOnlyForApi(l.fechaVencimiento),
+          arti_Id: d.arti_Id,
+          sade_Cantidad: l.cantidad,
+        });
+      }
+    }
+    return filas;
+  }
+
+  private validarFormulario(): boolean {
+    this.submitted = true;
+    this.errores.articulo = undefined;
+    this.errores.cantidad = undefined;
+
+    const okEncabezado = this.validarEncabezadoLleno();
+
+    let okDetalles = true;
     if (this.detalles.length === 0) {
-      this.toastService.warning('Agregue al menos un artículo a la salida');
-      return;
+      this.errores.detalles = ' ';
+      okDetalles = false;
+    } else {
+      const detApi = this.construirDetallesParaApi();
+      if (detApi.length === 0) {
+        this.errores.detalles = ' ';
+        okDetalles = false;
+      } else {
+        this.errores.detalles = undefined;
+      }
     }
 
-    // Validar que el usuario esté logueado
-    if (!this.userData || !this.userData.usua_Id) {
+    if (!this.userData?.usua_Id) {
       this.toastService.error('No se pudo obtener la información del usuario');
+      return false;
+    }
+
+    if (!okEncabezado || !okDetalles) {
+      this.mostrarAlertaCamposIncompletos();
+      return false;
+    }
+
+    return true;
+  }
+
+  guardar(): void {
+    if (!this.validarFormulario()) {
       return;
     }
 
@@ -310,7 +611,7 @@ export class CreateComponent implements OnInit, OnDestroy {
           const totalPendiente = response.data
             .filter((s: any) => 
               s.sucs_Id === this.sucs_Id && 
-              s.sali_EstadoSalida === 'Enviada a Sucursal'
+              this.esEstadoEnviada(s?.sali_EstadoSalida)
             )
             .reduce((sum: number, s: any) => sum + (s.sali_CostoTotal || 0), 0);
 
@@ -340,20 +641,45 @@ export class CreateComponent implements OnInit, OnDestroy {
     });
   }
 
-  private enviarSalida(): void {
-    const usuarioId = this.userData.usua_Id;
+  private esEstadoEnviada(estado: string | undefined | null): boolean {
+    // Evita depender del texto exacto (mayúsculas / “Sucursal” vs “sucursal”)
+    return (estado || '').toLowerCase().includes('enviad');
+  }
 
-    const request = {
-      sucs_Id: this.sucs_Id,
+  private enviarSalida(): void {
+    const usuarioId = this.userData.usua_Id as number;
+    const fechaCreacion = this.obtenerFechaCreacionIso() as string;
+
+    /**
+     * Cuerpo /Salidas/Insertar.
+     * El costo total de la salida no se envía: el SP lo calcula desde el JSON de detalles
+     * (cantidad × costo unitario por línea). Aquí seguimos usando `costoTotalSalida` solo para UI y validación local del tope.
+     */
+    const request: {
+      code_Status: number;
+      message_Status: string;
+      sucs_Id: number;
+      sali_UsuarioEnvia: number;
+      vehi_Id: number;
+      sali_Transportista: number;
+      sali_Creacion: number;
+      sali_FechaCreacion: string;
+      sali_FechaSalida: string;
+      lote_Id: number;
+      detalles: ReturnType<CreateComponent['construirDetallesParaApi']>;
+    } = {
+      code_Status: 0,
+      message_Status: '',
+      sucs_Id: this.sucs_Id as number,
       sali_UsuarioEnvia: usuarioId,
-      vehi_Id: this.vehi_Id || null,
-      sali_Transportista: this.sali_Transportista || null,
+      vehi_Id: this.vehi_Id ?? 0,
+      sali_Transportista: 0,
       sali_Creacion: usuarioId,
-      sali_FechaCreacion: new Date().toISOString(),
-      detalles: this.detalles.map(d => ({
-        arti_Id: d.arti_Id,
-        sade_Cantidad: d.cantidad
-      }))
+      sali_FechaCreacion: fechaCreacion,
+      // Requerimiento: la fecha de salida será la misma del input de “Fecha creación”.
+      sali_FechaSalida: fechaCreacion,
+      lote_Id: 0,
+      detalles: this.construirDetallesParaApi(),
     };
 
     this.guardando = true;
@@ -364,12 +690,52 @@ export class CreateComponent implements OnInit, OnDestroy {
       }
     }).subscribe({
       next: (res) => {
-        if (res.success) {
-          this.toastService.success(res.message || 'Salida creada exitosamente');
+        const raw = res?.data;
+        const sp = Array.isArray(raw) ? raw[0] : raw;
+        const codeStatus =
+          sp?.code_Status ?? sp?.Code_Status ?? null;
+        const msgSp =
+          (sp?.message_Status ?? sp?.Message_Status ?? '').trim();
+        const msgTop = (res?.message ?? res?.Message ?? '').trim();
+        const msg = msgSp || msgTop;
+
+        if (codeStatus === 1) {
+          this.toastService.success(
+            msg || 'Salida creada exitosamente',
+            'Éxito'
+          );
           this.onSave.emit(new Salidas());
           this.resetForm();
+        } else if (codeStatus === 2) {
+          /* Tope L 5.000 u otra regla de negocio del SP: error (rojo), sin navegar ni limpiar */
+          this.toastService.error(
+            msg || 'No se puede registrar la salida.',
+            'No permitido'
+          );
+        } else if (codeStatus === -1) {
+          this.toastService.error(
+            msg || 'Error al crear la salida',
+            'Error'
+          );
+        } else if (codeStatus != null) {
+          this.toastService.error(
+            msg || 'No se pudo registrar la salida.',
+            'Error'
+          );
+        } else if (res.success) {
+          /* Respuesta sin fila SP: evitar éxito verde si el texto es de validación de negocio */
+          if (/supera|l[ií]mite|5[.,]000|5000|no se puede registrar/i.test(msg)) {
+            this.toastService.error(msg, 'No permitido');
+          } else {
+            this.toastService.success(
+              msg || 'Salida creada exitosamente',
+              'Éxito'
+            );
+            this.onSave.emit(new Salidas());
+            this.resetForm();
+          }
         } else {
-          this.toastService.error(res.message || 'Error al crear la salida');
+          this.toastService.error(msg || 'Error al crear la salida');
         }
         this.guardando = false;
       },
@@ -381,22 +747,16 @@ export class CreateComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Genera texto para tooltip con información de lotes
-   */
-  getLotesTooltip(item: DetalleItem): string {
-    return item.lotesUsados.map(lote => 
-      `${lote.lote_Codigo}: ${lote.cantidad} uds @ L${lote.costoUnitario.toFixed(2)} (Vto: ${new Date(lote.fechaVencimiento).toLocaleDateString()})`
-    ).join('\n');
-  }
-
   resetForm(): void {
     this.sucs_Id = null;
     this.vehi_Id = null;
-    this.sali_Transportista = null;
+    this.transportistaTexto = '';
     this.detalles = [];
     this.articuloSeleccionado = null;
     this.cantidadSeleccionada = 1;
+    this.saliFechaCreacionInput = this.toDateTimeLocalValue(new Date());
+    this.submitted = false;
+    this.errores = {};
   }
 
   cancelar(): void {

@@ -1,3 +1,124 @@
 <!-- Start Breadcrumbs -->
 <app-breadcrumbs title="ANALYTICS" [breadcrumbItems]="breadCrumbItems"></app-breadcrumbs>
 <!-- End Breadcrumbs -->
+
+<section class="dash-analytics" aria-labelledby="dash-analytics-heading">
+  <div class="dash-analytics__hero card border-0 shadow-sm mb-4">
+    <div class="card-body dash-analytics__hero-inner">
+      <div class="row align-items-center g-3">
+        <div class="col-lg-8">
+          <p class="dash-analytics__eyebrow mb-2">Inventario</p>
+          <h2 id="dash-analytics-heading" class="h4 fw-semibold text-white mb-2">
+            Resumen del día
+          </h2>
+          <p class="dash-analytics__lead mb-0">
+            Vista general de movimientos y stock. Los datos son de ejemplo hasta conectar tus APIs.
+          </p>
+        </div>
+        <div class="col-lg-4 text-lg-end">
+          <div class="dash-analytics__hero-stat">
+            <span class="dash-analytics__hero-stat-label">Estado</span>
+            <span class="dash-analytics__hero-stat-value">Operativo</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    @for (kpi of kpis; track kpi.label) {
+      <div class="col-sm-6 col-xl-3">
+        <div class="card dash-kpi h-100 border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-start justify-content-between gap-2">
+              <div>
+                <p class="dash-kpi__label text-muted mb-1">{{ kpi.label }}</p>
+                <p class="dash-kpi__value mb-0 fw-semibold">{{ kpi.value }}</p>
+                <p class="dash-kpi__hint mb-0" [class.text-success]="kpi.trend === 'up'" [class.text-danger]="kpi.trend === 'down'">
+                  <i class="ri-arrow-{{ kpi.trend === 'up' ? 'up' : 'down' }}-s-line align-middle"></i>
+                  {{ kpi.delta }}
+                </p>
+              </div>
+              <div class="dash-kpi__icon" [attr.aria-hidden]="true">
+                <i [class]="kpi.icon"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="row g-3">
+    <div class="col-xl-8">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-0 pt-3 pb-0 d-flex align-items-center justify-content-between">
+          <div>
+            <h3 class="h6 fw-semibold mb-0">Actividad reciente</h3>
+            <p class="small text-muted mb-0">Últimos movimientos registrados</p>
+          </div>
+          <span class="badge dash-analytics__badge">Demo</span>
+        </div>
+        <div class="card-body pt-3">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle dash-table mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th scope="col">Referencia</th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Cantidad</th>
+                  <th scope="col" class="text-end">Hora</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of activityRows; track row.ref) {
+                  <tr>
+                    <td class="fw-medium">{{ row.ref }}</td>
+                    <td><span class="dash-pill" [class.dash-pill--in]="row.type === 'Entrada'" [class.dash-pill--out]="row.type === 'Salida'">{{ row.type }}</span></td>
+                    <td>{{ row.qty }}</td>
+                    <td class="text-end text-muted small">{{ row.time }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-4">
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+          <h3 class="h6 fw-semibold mb-3">Distribución (demo)</h3>
+          <div class="dash-bars" role="img" aria-label="Gráfico de barras de ejemplo">
+            @for (bar of chartBars; track bar.label) {
+              <div class="dash-bars__row mb-3">
+                <div class="d-flex justify-content-between small mb-1">
+                  <span class="text-muted">{{ bar.label }}</span>
+                  <span class="fw-medium">{{ bar.pct }}%</span>
+                </div>
+                <div class="dash-bars__track">
+                  <div class="dash-bars__fill" [style.width.%]="bar.pct"></div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+      <div class="card border-0 shadow-sm dash-tip">
+        <div class="card-body">
+          <div class="d-flex gap-3">
+            <div class="dash-tip__icon flex-shrink-0">
+              <i class="ri-lightbulb-flash-line"></i>
+            </div>
+            <div>
+              <h3 class="h6 fw-semibold mb-1">Siguiente paso</h3>
+              <p class="small text-muted mb-0">
+                Conecta el backend para reemplazar estos datos por métricas reales de inventario y alertas de stock mínimo.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

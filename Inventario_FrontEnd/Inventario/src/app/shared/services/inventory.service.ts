@@ -3,7 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { Entradas } from 'src/app/Models/Inventario/Entradas.Model';
-import { Salidas } from 'src/app/Models/Inventario/Salidas.Model';
+import {
+  Salidas,
+  buildSalidaRecibirRequest,
+} from 'src/app/Models/Inventario/Salidas.Model';
 import { Articulos } from 'src/app/Models/General/Articulos.Model';
 import { Sucursales } from 'src/app/Models/General/Sucursales.Model';
 import { Lotes } from 'src/app/Models/Inventario/Lotes.Model';
@@ -43,8 +46,10 @@ export class InventoryService {
   }
 
   recibirSalida(saliId: number, usuarioId: number): Observable<any> {
-    const payload = { Sali_Id: saliId, Usua_Creacion: usuarioId };
-    return this.http.put<any>(`${this.apiUrl}/Salidas/Recibir`, payload, { headers: this.getHeaders() });
+    const payload = buildSalidaRecibirRequest(saliId, usuarioId);
+    return this.http.put<any>(`${this.apiUrl}/Salidas/Recibir`, payload, {
+      headers: this.getHeaders(),
+    });
   }
 
   getSalidaDetalle(saliId: number): Observable<any> {

@@ -1,0 +1,111 @@
+@use '../salidas-theme' as *;
+
+:host {
+  display: block;
+}
+
+.salidas-panel-card .text-primary {
+  color: $sd-accent !important;
+}
+
+.salidas-panel-card {
+  @include sd-panel-shell;
+  position: relative;
+
+  .card-title {
+    color: $sd-bg-from;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .card-body {
+    padding-top: 1.25rem;
+  }
+}
+
+.salidas-muted-panel {
+  background: linear-gradient(
+    165deg,
+    rgba(20, 26, 47, 0.04) 0%,
+    $sd-accent-soft 100%
+  ) !important;
+  border: 1px solid rgba(20, 26, 47, 0.08) !important;
+}
+
+.salidas-panel-card .btn-primary {
+  background: $sd-accent;
+  border-color: $sd-accent;
+  font-weight: 600;
+
+  &:hover {
+    background: $sd-accent-hover;
+    border-color: $sd-accent-hover;
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 0.2rem rgba(245, 130, 32, 0.35);
+  }
+}
+
+.salidas-panel-card .table {
+  thead th {
+    background: linear-gradient(165deg, $sd-bg-from 0%, $sd-bg-to 100%);
+    color: rgba(255, 255, 255, 0.92);
+    border-color: $sd-accent-border;
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  tbody tr:hover td {
+    background: rgba(245, 130, 32, 0.06);
+  }
+}
+
+.salidas-panel-card .alert-info {
+  background: $sd-accent-soft;
+  border-color: $sd-accent-border;
+  color: rgba(20, 26, 47, 0.85);
+}
+
+.salidas-panel-card h6 {
+  color: rgba(20, 26, 47, 0.85);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.salidas-panel-card .form-label {
+  color: rgba(20, 26, 47, 0.72);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.salidas-create-filters {
+  padding: 1rem 1.1rem;
+  border-radius: 10px;
+  background: linear-gradient(
+    165deg,
+    rgba(20, 26, 47, 0.04) 0%,
+    $sd-accent-soft 100%
+  );
+  border: 1px solid rgba(20, 26, 47, 0.06);
+}
+
+.salidas-panel-card hr {
+  border-color: $sd-accent-border;
+  opacity: 1;
+}
+
+/* Bordes rojos en validación (campos obligatorios) */
+.salidas-panel-card .form-select.is-invalid,
+.salidas-panel-card .form-control.is-invalid {
+  border-color: #dc3545 !important;
+}
+
+.salidas-panel-card .table-responsive.border-danger {
+  border-width: 2px !important;
+}

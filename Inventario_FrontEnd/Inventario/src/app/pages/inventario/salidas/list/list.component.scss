@@ -1,0 +1,147 @@
+@use '../salidas-theme' as *;
+
+:host {
+  display: block;
+}
+
+.salidas-page {
+  padding-bottom: 1.5rem;
+
+  .text-primary {
+    color: $sd-accent !important;
+  }
+}
+
+.salidas-main-card {
+  @include sd-panel-shell;
+  position: relative;
+
+  .card-body {
+    padding-top: 1.25rem;
+  }
+}
+
+.salidas-filters {
+  padding: 1rem 1.1rem;
+  margin-bottom: 0.5rem;
+  border-radius: 10px;
+  background: linear-gradient(
+    165deg,
+    rgba(20, 26, 47, 0.04) 0%,
+    $sd-accent-soft 100%
+  );
+  border: 1px solid rgba(20, 26, 47, 0.06);
+
+  .form-label {
+    color: rgba(20, 26, 47, 0.72);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
+
+.salidas-toolbar {
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.salidas-page .btn-primary {
+  background: $sd-accent;
+  border-color: $sd-accent;
+  font-weight: 600;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+
+  &:hover {
+    background: $sd-accent-hover;
+    border-color: $sd-accent-hover;
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 0.2rem rgba(245, 130, 32, 0.35);
+  }
+}
+
+.salidas-page .btn-light {
+  border: 1px solid rgba(20, 26, 47, 0.1);
+}
+
+.salidas-page hr {
+  border-color: $sd-accent-border;
+  opacity: 1;
+}
+
+.salidas-page .search-box .search {
+  border-color: rgba(20, 26, 47, 0.12);
+  padding-left: 2.5rem;
+
+  &:focus {
+    border-color: $sd-accent;
+    box-shadow: 0 0 0 0.15rem rgba(245, 130, 32, 0.2);
+  }
+}
+
+.salidas-page .search-box .search-icon {
+  color: rgba(20, 26, 47, 0.45);
+}
+
+.salidas-page .table {
+  thead th {
+    background: linear-gradient(165deg, $sd-bg-from 0%, $sd-bg-to 100%);
+    color: rgba(255, 255, 255, 0.92);
+    border-color: $sd-accent-border;
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    vertical-align: middle;
+  }
+
+  thead th.sort:hover {
+    color: $sd-accent-hover;
+  }
+
+  tbody tr:hover td {
+    background: rgba(245, 130, 32, 0.06);
+  }
+}
+
+.salidas-page .dropdown-action-list .btn-light {
+  border: 1px solid rgba(20, 26, 47, 0.12);
+  font-weight: 500;
+
+  &:hover {
+    background: $sd-accent-soft;
+    border-color: $sd-accent-border;
+    color: #d97714;
+  }
+}
+
+.salidas-floating-menu {
+  border: 1px solid $sd-accent-border;
+  box-shadow: 0 12px 36px rgba(20, 26, 47, 0.15);
+  border-radius: 8px;
+  overflow: hidden;
+
+  .dropdown-item {
+    transition: background 0.2s ease, padding-left 0.2s ease;
+
+    &:hover {
+      background: $sd-accent-soft;
+      padding-left: 1.1rem;
+    }
+  }
+}
+
+.salidas-overlay {
+  backdrop-filter: blur(2px);
+}
+
+.salidas-spinner {
+  color: $sd-accent;
+}
+
+.salidas-page .dataTables_info {
+  color: rgba(20, 26, 47, 0.55);
+  font-size: 0.875rem;
+}

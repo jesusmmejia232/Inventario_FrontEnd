@@ -1,0 +1,16 @@
+// Misma paleta que `layouts/sidebar/sidebar.component.scss` y login
+$sd-accent: #f58220;
+$sd-accent-hover: #ff9635;
+$sd-accent-soft: rgba(245, 130, 32, 0.12);
+$sd-accent-border: rgba(245, 130, 32, 0.22);
+$sd-bg-from: #141a2f;
+$sd-bg-to: #1a2238;
+$sd-panel-radius: 12px;
+
+@mixin sd-panel-shell {
+  border-radius: $sd-panel-radius;
+  border: 1px solid rgba(20, 26, 47, 0.08);
+  background: #fff;
+  box-shadow: 0 4px 20px rgba(20, 26, 47, 0.06);
+  overflow: hidden;
+}

@@ -4,9 +4,9 @@ import {
   UntypedFormGroup,
   Validators,
 } from '@angular/forms';
-import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Subscription } from 'rxjs';
+import { RootReducerState } from 'src/app/store';
 import { login } from 'src/app/store/Authentication/authentication.actions';
 import { selectAuthError } from 'src/app/store/Authentication/authentication-selector';
 
@@ -21,9 +21,8 @@ export class LoginComponent implements OnInit, OnDestroy {
   // Login Form
   loginForm!: UntypedFormGroup;
   submitted = false;
-  fieldTextType!: boolean;
+  fieldTextType = false;
   error = '';
-  returnUrl!: string;
 
   // Subscription para errores del store
   private errorSubscription?: Subscription;
@@ -33,8 +32,7 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   constructor(
     private formBuilder: UntypedFormBuilder,
-    private router: Router,
-    private store: Store
+    private store: Store<RootReducerState>
   ) {}
 
   ngOnInit(): void {

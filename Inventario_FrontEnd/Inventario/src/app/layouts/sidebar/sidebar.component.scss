@@ -1,32 +1,50 @@
+// Alineado con la paleta del login (acento naranja + panel oscuro)
+$menu-accent: #f58220;
+$menu-accent-hover: #ff9635;
+$menu-accent-soft: rgba(245, 130, 32, 0.12);
+$menu-accent-border: rgba(245, 130, 32, 0.22);
+$menu-bg-from: #141a2f;
+$menu-bg-to: #1a2238;
 
 .app-menu {
-  background: linear-gradient(135deg, #141a2f 0%, #1a2340 100%);
-  border-right: 1px solid rgba(214, 182, 138, 0.1);
+  background: linear-gradient(165deg, $menu-bg-from 0%, $menu-bg-to 100%);
+  border-right: 1px solid $menu-accent-border;
 }
 
+.navbar-brand-box {
+  border-bottom: 1px solid $menu-accent-border;
+}
+
+.app-menu .btn-vertical-sm-hover {
+  color: rgba(255, 255, 255, 0.55);
+
+  &:hover {
+    color: $menu-accent;
+  }
+}
 
 .nav-link {
-  color: rgba(255, 255, 255, 0.75);
-  transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+  color: rgba(255, 255, 255, 0.78);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   border-left: 3px solid transparent;
 
   i {
-    color: #d6b68a;
-    transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+    color: rgba(255, 255, 255, 0.55);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   span {
-    transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   &:hover {
-    background: rgba(214, 182, 138, 0.08);
+    background: $menu-accent-soft;
     color: #fff;
-    border-left-color: #d6b68a;
+    border-left-color: $menu-accent;
 
     i {
-      transform: translateX(5px) scale(1.08);
-      color: #e0c89a;
+      transform: translateX(4px) scale(1.05);
+      color: $menu-accent-hover;
     }
 
     span {
@@ -35,48 +53,47 @@
   }
 }
 
-
 .nav-link.active,
 .nav-link.show {
-  background: rgba(20, 26, 47, 0.6);
+  background: rgba(245, 130, 32, 0.14);
   color: #fff;
-  border-left-color: #d6b68a;
+  border-left-color: $menu-accent;
   font-weight: 600;
 
   i {
-    color: #d6b68a;
+    color: $menu-accent;
   }
 }
 
 .menu-title {
-  color: rgba(214, 182, 138, 0.6);
+  color: rgba(255, 255, 255, 0.42);
   font-size: 0.75rem;
   text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .menu-dropdown {
-  background: rgba(20, 26, 47, 0.3);
-  border-left: 2px solid rgba(214, 182, 138, 0.15);
+  background: rgba(0, 0, 0, 0.2);
+  border-left: 2px solid $menu-accent-border;
 }
 
 .menu-dropdown .nav-link {
   padding-left: 2.5rem;
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255, 255, 255, 0.68);
 
   &:hover {
-    background: rgba(214, 182, 138, 0.08);
+    background: $menu-accent-soft;
   }
 }
 
-
 #scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(214, 182, 138, 0.4);
+  background: rgba(245, 130, 32, 0.35);
   border-radius: 3px;
 }
 
 .active {
-  color: #d6b68a;
+  color: $menu-accent;
   font-weight: bold;
 }
 
@@ -89,7 +106,7 @@
 
 .logo-text {
   display: flex;
-  gap: 0.3rem;
+  gap: 0;
   font-size: 1.4rem;
   font-weight: 700;
   letter-spacing: -0.5px;
@@ -97,17 +114,20 @@
 
 .logo-text-sm {
   display: flex;
-  gap: 0.2rem;
+  gap: 0;
   font-size: 1.2rem;
   font-weight: 700;
 }
 
 .logo-inve {
   color: #ffffff;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
 }
 
-
+.logo-ntario {
+  color: $menu-accent;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
 
 @media (max-width: 576px) {
   .logo-lg {
