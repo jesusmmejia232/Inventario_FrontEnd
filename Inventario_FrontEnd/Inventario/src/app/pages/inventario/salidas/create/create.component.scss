@@ -99,3 +99,13 @@
   border-color: $sd-accent-border;
   opacity: 1;
 }
+
+/* Bordes rojos en validación (campos obligatorios) */
+.salidas-panel-card .form-select.is-invalid,
+.salidas-panel-card .form-control.is-invalid {
+  border-color: #dc3545 !important;
+}
+
+.salidas-panel-card .table-responsive.border-danger {
+  border-width: 2px !important;
+}

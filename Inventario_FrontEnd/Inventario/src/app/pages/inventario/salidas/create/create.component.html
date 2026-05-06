@@ -26,7 +26,7 @@
               {{suc.sucs_Descripcion}}
             </option>
           </select>
-          <div class="invalid-feedback" *ngIf="submitted && errores.sucs">{{ errores.sucs }}</div>
+          <div class="invalid-feedback" *ngIf="submitted && errores.sucs?.trim()">{{ errores.sucs }}</div>
         </div>
 
         <div class="col-md-3">
@@ -38,13 +38,18 @@
             (ngModelChange)="errores.fecha = undefined"
             [class.is-invalid]="submitted && errores.fecha"
             [disabled]="guardando" />
-          <div class="invalid-feedback" *ngIf="submitted && errores.fecha">{{ errores.fecha }}</div>
+          <div class="invalid-feedback" *ngIf="submitted && errores.fecha?.trim()">{{ errores.fecha }}</div>
         </div>
 
         <div class="col-md-3">
-          <label class="form-label fw-bold">Vehículo</label>
-          <select class="form-select" [(ngModel)]="vehi_Id" [disabled]="guardando">
-            <option [ngValue]="null">Sin vehículo asignado</option>
+          <label class="form-label fw-bold">Vehículo <span class="text-danger">*</span></label>
+          <select
+            class="form-select"
+            [(ngModel)]="vehi_Id"
+            (ngModelChange)="errores.vehi = undefined"
+            [class.is-invalid]="submitted && errores.vehi"
+            [disabled]="guardando">
+            <option [ngValue]="null">Seleccione un vehículo...</option>
             <option *ngFor="let veh of vehiculos" [ngValue]="veh.vehi_Id">
               {{veh.vehi_Modelo}} - {{veh.vehi_Placa}}
             </option>
@@ -52,11 +57,13 @@
         </div>
 
         <div class="col-md-3">
-          <label class="form-label fw-bold">Transportista</label>
+          <label class="form-label fw-bold">Transportista <span class="text-danger">*</span></label>
           <input
             type="text"
             class="form-control"
             [(ngModel)]="transportistaTexto"
+            (ngModelChange)="errores.transportista = undefined"
+            [class.is-invalid]="submitted && errores.transportista"
             [disabled]="guardando"
             placeholder="Nombre o empresa transportista"
             autocomplete="organization" />
@@ -70,7 +77,12 @@
       <div class="row g-3 align-items-end mb-4 p-3 rounded salidas-muted-panel">
         <div class="col-md-7">
           <label class="form-label fw-bold">Artículo <span class="text-danger">*</span></label>
-          <select class="form-select" [(ngModel)]="articuloSeleccionado" [disabled]="guardando">
+          <select
+            class="form-select"
+            [(ngModel)]="articuloSeleccionado"
+            (ngModelChange)="errores.articulo = undefined"
+            [class.is-invalid]="submitted && errores.articulo"
+            [disabled]="guardando">
             <option [ngValue]="null">Seleccione un artículo...</option>
             <option *ngFor="let art of articulos" [ngValue]="art.arti_Id">
               {{art.arti_Codigo}} - {{art.arti_Descripcion}} (Stock: {{art.stock}})
@@ -80,20 +92,24 @@
 
         <div class="col-md-3">
           <label class="form-label fw-bold">Cantidad <span class="text-danger">*</span></label>
-          <input type="number" class="form-control" [(ngModel)]="cantidadSeleccionada" 
-                 min="1" [disabled]="guardando">
+          <input
+            type="number"
+            class="form-control"
+            [(ngModel)]="cantidadSeleccionada"
+            (ngModelChange)="errores.cantidad = undefined"
+            [class.is-invalid]="submitted && errores.cantidad"
+            min="1"
+            [disabled]="guardando" />
         </div>
 
         <div class="col-md-2">
           <button type="button" class="btn btn-primary w-100" 
                   (click)="agregarDetalle()" 
-                  [disabled]="guardando || !articuloSeleccionado || cantidadSeleccionada <= 0">
+                  [disabled]="guardando">
             <i class="ri-add-line me-1"></i> Agregar
           </button>
         </div>
       </div>
-
-      <div class="text-danger small mb-2" *ngIf="submitted && errores.detalles">{{ errores.detalles }}</div>
 
       <!-- Grid: una fila por lote (id producto, nombre, cantidad, lote, costo, vencimiento) -->
       <div class="table-responsive mb-4" [class.border]="submitted && errores.detalles" [class.border-danger]="submitted && errores.detalles" [class.rounded]="submitted && errores.detalles">

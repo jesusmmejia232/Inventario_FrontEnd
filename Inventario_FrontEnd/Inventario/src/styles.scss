@@ -347,6 +347,75 @@ ngx-dropzone-preview {
   }
 }
 
+/* Salidas / create: validación de campos incompletos (naranja, texto negro) */
+.toast-campos-incompletos {
+  background-image: none !important;
+  background-color: #fd7e14 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18) !important;
+
+  .toast-title {
+    display: none !important;
+  }
+
+  .toast-message {
+    color: #000 !important;
+    font-weight: 600;
+  }
+
+  .toast-progress {
+    background-color: rgba(0, 0, 0, 0.25) !important;
+  }
+}
+
+/* ngx-toastr: advertencias (warning) con texto negro (por defecto viene en blanco) */
+.toast-container .ngx-toastr.toast-warning,
+#toast-container .ngx-toastr.toast-warning {
+  color: #000 !important;
+
+  .toast-title,
+  .toast-message {
+    color: #000 !important;
+  }
+
+  .toast-message a,
+  .toast-message label {
+    color: #000 !important;
+  }
+
+  .toast-message a:hover {
+    color: #212529 !important;
+  }
+
+  .toast-close-button {
+    color: #000 !important;
+    text-shadow: none;
+
+    &:hover,
+    &:focus {
+      color: #000 !important;
+      opacity: 0.75;
+    }
+  }
+}
+
+/* Alertas Bootstrap tipo advertencia: texto negro */
+.alert.alert-warning,
+.alert-warning {
+  color: #000 !important;
+
+  .alert-heading,
+  p,
+  li,
+  span:not(.btn) {
+    color: #000 !important;
+  }
+
+  a:not(.btn) {
+    color: #000 !important;
+    text-decoration: underline;
+  }
+}
+
 .dropdown-responsive {
   left: 0 !important;
 }

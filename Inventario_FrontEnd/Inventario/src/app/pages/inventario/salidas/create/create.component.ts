@@ -78,7 +78,17 @@ export class CreateComponent implements OnInit, OnDestroy {
   /** Valor para input datetime-local (fecha/hora de creación de la salida) */
   saliFechaCreacionInput = '';
   submitted = false;
-  errores: { sucs?: string; fecha?: string; detalles?: string } = {};
+  errores: {
+    sucs?: string;
+    fecha?: string;
+    vehi?: string;
+    transportista?: string;
+    articulo?: string;
+    cantidad?: string;
+    detalles?: string;
+  } = {};
+
+  private readonly msgCamposIncompletos = 'Favor llene todos los campos';
 
   constructor(
     private http: HttpClient,
@@ -259,8 +269,12 @@ export class CreateComponent implements OnInit, OnDestroy {
   }
 
   agregarDetalle(): void {
-    if (!this.articuloSeleccionado || this.cantidadSeleccionada <= 0) {
-      this.toastService.warning('Seleccione un artículo y una cantidad válida');
+    this.submitted = true;
+    this.errores.detalles = undefined;
+    const okEncabezado = this.validarEncabezadoLleno();
+    const okLinea = this.validarLineaProducto();
+    if (!okEncabezado || !okLinea) {
+      this.mostrarAlertaCamposIncompletos();
       return;
     }
 
@@ -308,6 +322,74 @@ export class CreateComponent implements OnInit, OnDestroy {
     this.articuloSeleccionado = null;
     this.cantidadSeleccionada = 1;
     this.errores.detalles = undefined;
+    this.errores.articulo = undefined;
+    this.errores.cantidad = undefined;
+  }
+
+  /** Encabezado obligatorio: sucursal, fecha, vehículo y transportista. */
+  private validarEncabezadoLleno(): boolean {
+    let ok = true;
+    if (!this.sucs_Id) {
+      this.errores.sucs = ' ';
+      ok = false;
+    } else {
+      this.errores.sucs = undefined;
+    }
+
+    if (!this.obtenerFechaCreacionIso()) {
+      this.errores.fecha = ' ';
+      ok = false;
+    } else {
+      this.errores.fecha = undefined;
+    }
+
+    if (this.vehi_Id == null) {
+      this.errores.vehi = ' ';
+      ok = false;
+    } else {
+      this.errores.vehi = undefined;
+    }
+
+    if (!this.transportistaTexto?.trim()) {
+      this.errores.transportista = ' ';
+      ok = false;
+    } else {
+      this.errores.transportista = undefined;
+    }
+
+    return ok;
+  }
+
+  /** Línea “Agregar productos”: artículo y cantidad ≥ 1. */
+  private validarLineaProducto(): boolean {
+    let ok = true;
+    if (!this.articuloSeleccionado) {
+      this.errores.articulo = ' ';
+      ok = false;
+    } else {
+      this.errores.articulo = undefined;
+    }
+
+    const c = Number(this.cantidadSeleccionada);
+    if (!Number.isFinite(c) || c < 1) {
+      this.errores.cantidad = ' ';
+      ok = false;
+    } else {
+      this.errores.cantidad = undefined;
+    }
+
+    return ok;
+  }
+
+  private mostrarAlertaCamposIncompletos(): void {
+    this.toastService.show(this.msgCamposIncompletos, '', {
+      timeOut: 5500,
+      toastClass: 'ngx-toastr toast-campos-incompletos',
+      messageClass: 'toast-message',
+      titleClass: 'toast-title d-none',
+      positionClass: 'toast-top-right',
+      tapToDismiss: true,
+    });
   }
 
   /**
@@ -456,24 +538,23 @@ export class CreateComponent implements OnInit, OnDestroy {
   }
 
   private validarFormulario(): boolean {
-    this.errores = {};
     this.submitted = true;
+    this.errores.articulo = undefined;
+    this.errores.cantidad = undefined;
 
-    if (!this.sucs_Id) {
-      this.errores.sucs = 'Seleccione una sucursal de destino';
-    }
+    const okEncabezado = this.validarEncabezadoLleno();
 
-    const fechaIso = this.obtenerFechaCreacionIso();
-    if (!fechaIso) {
-      this.errores.fecha = 'Indique una fecha y hora de creación válidas';
-    }
-
+    let okDetalles = true;
     if (this.detalles.length === 0) {
-      this.errores.detalles = 'Agregue al menos un artículo a la salida';
+      this.errores.detalles = ' ';
+      okDetalles = false;
     } else {
       const detApi = this.construirDetallesParaApi();
       if (detApi.length === 0) {
-        this.errores.detalles = 'Los detalles no tienen información de lotes válida';
+        this.errores.detalles = ' ';
+        okDetalles = false;
+      } else {
+        this.errores.detalles = undefined;
       }
     }
 
@@ -482,15 +563,12 @@ export class CreateComponent implements OnInit, OnDestroy {
       return false;
     }
 
-    const ok = !this.errores.sucs && !this.errores.fecha && !this.errores.detalles;
-    if (!ok) {
-      const primero =
-        this.errores.sucs || this.errores.fecha || this.errores.detalles;
-      if (primero) {
-        this.toastService.warning('Revise los campos marcados antes de continuar');
-      }
+    if (!okEncabezado || !okDetalles) {
+      this.mostrarAlertaCamposIncompletos();
+      return false;
     }
-    return ok;
+
+    return true;
   }
 
   guardar(): void {
@@ -598,10 +676,10 @@ export class CreateComponent implements OnInit, OnDestroy {
           this.onSave.emit(new Salidas());
           this.resetForm();
         } else if (codeStatus === 2) {
-          /* Tope L 5.000 u otra regla de negocio del SP: advertencia, sin navegar ni limpiar */
-          this.toastService.warning(
+          /* Tope L 5.000 u otra regla de negocio del SP: error (rojo), sin navegar ni limpiar */
+          this.toastService.error(
             msg || 'No se puede registrar la salida.',
-            'Advertencia'
+            'No permitido'
           );
         } else if (codeStatus === -1) {
           this.toastService.error(
@@ -616,7 +694,7 @@ export class CreateComponent implements OnInit, OnDestroy {
         } else if (res.success) {
           /* Respuesta sin fila SP: evitar éxito verde si el texto es de validación de negocio */
           if (/supera|l[ií]mite|5[.,]000|5000|no se puede registrar/i.test(msg)) {
-            this.toastService.warning(msg, 'Advertencia');
+            this.toastService.error(msg, 'No permitido');
           } else {
             this.toastService.success(
               msg || 'Salida creada exitosamente',
