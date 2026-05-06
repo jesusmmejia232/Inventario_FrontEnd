@@ -227,6 +227,12 @@ export class CreateComponent implements OnInit, OnDestroy {
     Lote_CostoUnitario: number;
     Lote_FechaVencimiento: string;
   } | null {
+    // Ignorar lotes inactivos si el API lo indica (lote_Estado / Lote_Estado).
+    const estadoRaw = l?.Lote_Estado ?? l?.lote_Estado;
+    if (estadoRaw !== undefined && estadoRaw !== null) {
+      const activo = Boolean(estadoRaw);
+      if (!activo) return null;
+    }
     const disp = Number(l.Lote_CantidadDisponible ?? l.lote_CantidadDisponible ?? 0);
     if (disp <= 0) return null;
     const loteId = Number(l.Lote_Id ?? l.lote_Id);
@@ -421,7 +427,7 @@ export class CreateComponent implements OnInit, OnDestroy {
       return null;
     }
 
-    // Ordenar lotes por fecha de vencimiento (FIFO)
+    // Ordenar lotes por fecha de vencimiento (FEFO: vence primero, sale primero)
     const lotesOrdenados = [...articulo.lotesDisponibles].sort((a, b) => {
       const fechaA = new Date(a.Lote_FechaVencimiento);
       const fechaB = new Date(b.Lote_FechaVencimiento);
@@ -605,7 +611,7 @@ export class CreateComponent implements OnInit, OnDestroy {
           const totalPendiente = response.data
             .filter((s: any) => 
               s.sucs_Id === this.sucs_Id && 
-              s.sali_EstadoSalida === 'Enviada a Sucursal'
+              this.esEstadoEnviada(s?.sali_EstadoSalida)
             )
             .reduce((sum: number, s: any) => sum + (s.sali_CostoTotal || 0), 0);
 
@@ -633,6 +639,11 @@ export class CreateComponent implements OnInit, OnDestroy {
         this.enviarSalida();
       }
     });
+  }
+
+  private esEstadoEnviada(estado: string | undefined | null): boolean {
+    // Evita depender del texto exacto (mayúsculas / “Sucursal” vs “sucursal”)
+    return (estado || '').toLowerCase().includes('enviad');
   }
 
   private enviarSalida(): void {
