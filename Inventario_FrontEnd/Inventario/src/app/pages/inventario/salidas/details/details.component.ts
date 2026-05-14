@@ -11,12 +11,12 @@ import { HttpClient } from '@angular/common/http';
 import {
   Salidas,
   buildSalidaRecibirRequest,
-} from 'src/app/Models/Inventario/Salidas.Model';
-import { environment } from 'src/environments/environment';
+} from '../../../../Models/Inventario/Salidas.Model';
+import { environment } from '../../../../../environments/environment';
 import { ToastrService } from 'ngx-toastr';
 import { Store } from '@ngrx/store';
-import { RootReducerState } from 'src/app/store';
-import { getUser } from 'src/app/store/Authentication/authentication-selector';
+import { RootReducerState } from '../../../../store';
+import { getUser } from '../../../../store/Authentication/authentication-selector';
 
 /** Fila normalizada para la tabla (API puede enviar PascalCase o nombres extendidos). */
 export interface DetalleSalidaFila {

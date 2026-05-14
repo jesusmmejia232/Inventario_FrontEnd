@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { SharedModule } from 'src/app/shared/shared.module';
+import { SharedModule } from '../../../../shared/shared.module';
 import { CreateComponent } from './create.component';
-import { Salidas } from 'src/app/Models/Inventario/Salidas.Model';
+import { Salidas } from '../../../../Models/Inventario/Salidas.Model';
 
 @Component({
   selector: 'app-salida-create-page',

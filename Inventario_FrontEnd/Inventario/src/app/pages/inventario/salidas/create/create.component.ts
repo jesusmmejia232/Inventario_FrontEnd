@@ -3,12 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { NgSelectModule } from '@ng-select/ng-select';
-import { Salidas } from 'src/app/Models/Inventario/Salidas.Model';
-import { environment } from 'src/environments/environment';
+import { Salidas } from '../../../../Models/Inventario/Salidas.Model';
+import { environment } from '../../../../../environments/environment';
 import { ToastrService } from 'ngx-toastr';
 import { Store } from '@ngrx/store';
-import { RootReducerState } from 'src/app/store';
-import { getUser } from 'src/app/store/Authentication/authentication-selector';
+import { RootReducerState } from '../../../../store';
+import { getUser } from '../../../../store/Authentication/authentication-selector';
 import { Subscription, forkJoin, of, catchError } from 'rxjs';
 
 interface Articulo {

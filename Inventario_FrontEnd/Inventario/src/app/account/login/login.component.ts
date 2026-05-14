@@ -6,9 +6,9 @@ import {
 } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { Subscription } from 'rxjs';
-import { RootReducerState } from 'src/app/store';
-import { login } from 'src/app/store/Authentication/authentication.actions';
-import { selectAuthError } from 'src/app/store/Authentication/authentication-selector';
+import { RootReducerState } from '../../store';
+import { login } from '../../store/Authentication/authentication.actions';
+import { selectAuthError } from '../../store/Authentication/authentication-selector';
 
 @Component({
   selector: 'app-login',

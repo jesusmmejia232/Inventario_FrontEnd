@@ -7,26 +7,26 @@ import { PaginationModule } from 'ngx-bootstrap/pagination';
 import { ToastrService } from 'ngx-toastr';
 import { Store } from '@ngrx/store';
 import { NgSelectModule } from '@ng-select/ng-select';
-import { RootReducerState } from 'src/app/store';
+import { RootReducerState } from '../../../../store';
 import {
   getUser,
   selectPuedeCrearSalida,
-} from 'src/app/store/Authentication/authentication-selector';
-import { esAdminUsuario, esJefeBodegaUsuario } from 'src/app/Models/Acceso/Usuario.model';
+} from '../../../../store/Authentication/authentication-selector';
+import { esAdminUsuario, esJefeBodegaUsuario } from '../../../../Models/Acceso/Usuario.model';
 import { from, Observable, of, Subscription } from 'rxjs';
 import { catchError, map, mergeMap } from 'rxjs/operators';
 
-import { SharedModule } from 'src/app/shared/shared.module';
-import { ReactiveTableService } from 'src/app/shared/services/reactive-table.service';
-import { FloatingMenuService } from 'src/app/shared/services/floating-menu.service';
+import { SharedModule } from '../../../../shared/shared.module';
+import { ReactiveTableService } from '../../../../shared/services/reactive-table.service';
+import { FloatingMenuService } from '../../../../shared/services/floating-menu.service';
 import {
   Salidas,
   buildSalidaRecibirRequest,
-} from 'src/app/Models/Inventario/Salidas.Model';
-import { GlobalComponent } from 'src/app/global-component';
-import { environment } from 'src/environments/environment';
+} from '../../../../Models/Inventario/Salidas.Model';
+import { GlobalComponent } from '../../../../global-component';
+import { environment } from '../../../../../environments/environment';
 import { ConfirmationComponent } from '../confirmation/confirmation.component';
-import { InventoryService } from 'src/app/shared/services/inventory.service';
+import { InventoryService } from '../../../../shared/services/inventory.service';
 
 /** Columna «Unidades» del listado: `Salidas/Listar` envía la suma en `Sade_Cantidad` (o `unidadesTotales`). */
 function unidadesSalidaListadoDesdeApi(item: any): number {
